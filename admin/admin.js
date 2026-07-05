@@ -303,12 +303,10 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       preview.innerHTML = imagePreviewMarkup(input.value);
     });
 
-    const select = mediaSelect(value, "Choose from media library");
-    select.addEventListener("change", () => {
-      if (!select.value) return;
-      input.value = select.value;
-      onInput(select.value);
-      preview.innerHTML = imagePreviewMarkup(select.value);
+    const picker = mediaPicker(value, "Choose from media library", (url) => {
+      input.value = url;
+      onInput(url);
+      preview.innerHTML = imagePreviewMarkup(url);
       updateJsonEditor();
     });
 
@@ -334,7 +332,7 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       }
     });
 
-    wrap.append(preview, select, input, upload);
+    wrap.append(preview, picker, input, upload);
     return wrap;
   }
 
@@ -370,11 +368,9 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
         sync();
       });
 
-      const select = mediaSelect(url, "Choose gallery image");
-      select.addEventListener("change", () => {
-        if (!select.value) return;
-        input.value = select.value;
-        preview.innerHTML = imagePreviewMarkup(select.value);
+      const picker = mediaPicker(url, "Choose gallery image", (selectedUrl) => {
+        input.value = selectedUrl;
+        preview.innerHTML = imagePreviewMarkup(selectedUrl);
         sync();
       });
 
@@ -408,7 +404,7 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
         sync();
       });
 
-      row.append(preview, select, input, upload, remove);
+      row.append(preview, picker, input, upload, remove);
       list.append(row);
     };
 
@@ -452,13 +448,27 @@ function normalizeGalleryValue(value = []) {
   return String(value || "").split(/[\n,]+/).map((url) => url.trim()).filter(Boolean);
 }
 
-function mediaSelect(value = "", placeholder = "Choose image") {
+function mediaPicker(value = "", placeholder = "Choose image", onSelect = () => {}) {
+  const wrap = document.createElement("div");
+  wrap.className = "media-picker";
+
+  const thumb = document.createElement("div");
+  thumb.className = "media-picker-thumb";
+  thumb.innerHTML = imagePreviewMarkup(value);
+
   const select = document.createElement("select");
   select.innerHTML = `
     <option value="">${escapeAttribute(placeholder)}</option>
     ${mediaAssets.map((asset) => `<option value="${escapeAttribute(asset.url)}"${asset.url === value ? " selected" : ""}>${escapeAttribute(asset.name || fileNameFromUrl(asset.url))}</option>`).join("")}
   `;
-  return select;
+  select.addEventListener("change", () => {
+    if (!select.value) return;
+    thumb.innerHTML = imagePreviewMarkup(select.value);
+    onSelect(select.value);
+  });
+
+  wrap.append(thumb, select);
+  return wrap;
 }
 
 function escapeAttribute(value = "") {

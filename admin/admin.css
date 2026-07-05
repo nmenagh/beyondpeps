@@ -305,6 +305,34 @@ button {
   color: var(--muted);
 }
 
+.media-picker {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.media-picker-thumb {
+  width: 72px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.media-picker-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .media-dropzone {
   display: grid;
   gap: 0.55rem;
