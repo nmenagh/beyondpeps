@@ -1,0 +1,244 @@
+const STORAGE_KEY = "beyondPepsContent";
+
+function cloneDefaultContent() {
+  return JSON.parse(JSON.stringify(window.BEYOND_PEPS_DEFAULT_CONTENT || {
+    site: {},
+    categories: [],
+    products: [],
+    references: [],
+    posts: []
+  }));
+}
+
+function storageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function storageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+function hasUsableContent(content) {
+  return Boolean(
+    content?.schemaVersion >= 2 &&
+    content?.site?.heroTitle &&
+    Array.isArray(content.products) &&
+    Array.isArray(content.references) &&
+    Array.isArray(content.posts)
+  );
+}
+
+async function loadContent() {
+  const defaults = cloneDefaultContent();
+  try {
+    const remoteContent = await window.BeyondPepsSupabase?.loadContent(defaults);
+    if (hasUsableContent(remoteContent)) {
+      storageSet(STORAGE_KEY, JSON.stringify(remoteContent));
+      return remoteContent;
+    }
+  } catch (error) {
+    console.warn("Supabase content unavailable, using local fallback.", error);
+  }
+
+  const stored = storageGet(STORAGE_KEY);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      if (hasUsableContent(parsed)) return parsed;
+      const content = cloneDefaultContent();
+      storageSet(STORAGE_KEY, JSON.stringify(content));
+      return content;
+    } catch {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+    }
+  }
+
+  try {
+    const response = await fetch("data/site-content.json");
+    if (!response.ok) throw new Error("Content request failed");
+    const content = await response.json();
+    storageSet(STORAGE_KEY, JSON.stringify(content));
+    return content;
+  } catch {
+    const content = defaults;
+    storageSet(STORAGE_KEY, JSON.stringify(content));
+    return content;
+  }
+}
+
+function valueAtPath(source, path) {
+  return path.split(".").reduce((value, key) => value?.[key], source);
+}
+
+function applyContentBindings(content) {
+  document.querySelectorAll("[data-content]").forEach((node) => {
+    const value = valueAtPath(content, node.dataset.content);
+    if (typeof value === "string") node.textContent = value;
+  });
+}
+
+function money(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(value || 0);
+}
+
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;"
+  })[char]);
+}
+
+function imageMarkup(url, alt, className) {
+  if (!url) return "";
+  return `<div class="${className}"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy"></div>`;
+}
+
+function isPublished(item) {
+  return String(item?.status || "Published").trim().toLowerCase() === "published";
+}
+
+function renderProductCard(product) {
+  return `
+    <a class="product-card product-card-link" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHtml(product.name || "product")}">
+      ${imageMarkup(product.imageUrl, product.name || "Product image", "card-image product-image")}
+      <div class="product-topline">
+        <span>${escapeHtml(product.category || "Supply")}</span>
+        <span class="status">${escapeHtml(product.status || "Draft")}</span>
+      </div>
+      <h3>${escapeHtml(product.name || "Untitled product")}</h3>
+      <p>${escapeHtml(product.summary || "")}</p>
+      <div class="price">${money(product.price)}</div>
+    </a>
+  `;
+}
+
+function renderPostCard(post, wide = false) {
+  return `
+    <article class="${wide ? "wide-card " : ""}post-card">
+      ${imageMarkup(post.imageUrl || post.heroImageUrl, post.title || "Blog image", "card-image post-image")}
+      <div class="post-topline">
+        <span>${escapeHtml(post.date || "")}</span>
+        <span>${escapeHtml(post.status || "Draft")}</span>
+      </div>
+      <h3>${escapeHtml(post.title || "Untitled post")}</h3>
+      <p>${escapeHtml(post.summary || "")}</p>
+    </article>
+  `;
+}
+
+function renderProducts(products = []) {
+  const grid = document.querySelector("#productGrid");
+  if (!grid) return;
+  grid.innerHTML = products.map(renderProductCard).join("");
+}
+
+function renderFeaturedProducts(products = []) {
+  const grid = document.querySelector("#featuredProductGrid");
+  if (!grid) return;
+  renderProductsInto(grid, products.filter((product) => product.featured).slice(0, 3));
+}
+
+function renderProductsInto(grid, products = []) {
+  grid.innerHTML = products.map(renderProductCard).join("");
+}
+
+function renderReferences(references = []) {
+  const list = document.querySelector("#referenceList");
+  if (!list) return;
+  list.innerHTML = references.filter(isPublished).map((reference) => `
+    <a class="reference-card reference-card-link" href="reference.html?id=${encodeURIComponent(reference.id || reference.slug || reference.title)}" aria-label="Read ${escapeHtml(reference.title || "reference")}">
+      <span class="type">${escapeHtml(reference.type || "Reference")}</span>
+      <h3>${escapeHtml(reference.title || "Untitled reference")}</h3>
+      <p>${escapeHtml(reference.summary || "")}</p>
+      <span class="read-more">Read reference</span>
+    </a>
+  `).join("");
+}
+
+function renderPosts(posts = []) {
+  const grid = document.querySelector("#postGrid");
+  if (!grid) return;
+  grid.innerHTML = posts.map((post) => renderPostCard(post)).join("");
+}
+
+function renderPostList(posts = []) {
+  const list = document.querySelector("#postList");
+  if (!list) return;
+  list.innerHTML = posts.map((post) => renderPostCard(post, true)).join("");
+}
+
+function applyPageMedia(content) {
+  const blogHero = document.querySelector("[data-blog-hero]");
+  if (blogHero && content.site?.blogHeroImageUrl) {
+    blogHero.style.setProperty("--page-hero-image", `url("${content.site.blogHeroImageUrl}")`);
+    blogHero.classList.add("has-page-hero-image");
+  }
+}
+
+async function updateAccountPill() {
+  const pill = document.querySelector("[data-account-pill]");
+  if (!pill) return;
+
+  try {
+    const user = await window.BeyondPepsSupabase?.currentUser?.();
+    pill.textContent = user ? "Account" : "Login";
+  } catch {
+    pill.textContent = "Login";
+  }
+}
+
+function setupHeroMotion() {
+  const root = document.documentElement;
+  let raf = 0;
+
+  const update = () => {
+    const scroll = window.scrollY;
+    const shift = Math.min(120, scroll * 0.16);
+    const sheen = Math.min(640, scroll * 0.7) - 220;
+    const scale = 1.035 + Math.min(0.035, scroll * 0.00004);
+    root.style.setProperty("--hero-shift", `${shift}px`);
+    root.style.setProperty("--sheen-shift", `${sheen}px`);
+    root.style.setProperty("--hero-scale", scale.toFixed(3));
+    raf = 0;
+  };
+
+  window.addEventListener("scroll", () => {
+    if (!raf) raf = requestAnimationFrame(update);
+  }, { passive: true });
+  update();
+}
+
+loadContent().then((content) => {
+  applyContentBindings(content);
+  renderProducts(content.products);
+  renderFeaturedProducts(content.products);
+  renderReferences(content.references);
+  renderPosts(content.posts);
+  renderPostList(content.posts);
+  applyPageMedia(content);
+  updateAccountPill();
+  setupHeroMotion();
+});
+
+window.BeyondPepsSite = {
+  loadContent,
+  updateAccountPill
+};

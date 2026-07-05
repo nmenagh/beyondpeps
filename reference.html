@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reference | Beyond Peps</title>
+    <meta name="description" content="Educational reference detail from Beyond Peps.">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Beyond Peps home">
+        <span class="brand-mark">BP</span>
+        <span>Beyond Peps</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="shop.html">Shop</a>
+        <a class="is-active" href="references.html">References</a>
+        <a href="calculators.html">Calculators</a>
+        <a href="blog.html">Blog</a>
+        <a href="cart.html">Cart <span data-cart-count>0</span></a>
+      </nav>
+      <a class="admin-link account-pill" href="account.html" data-account-pill>Login</a>
+    </header>
+
+    <main>
+      <section class="page-hero reference-detail-hero">
+        <p class="eyebrow" id="referenceType">Reference</p>
+        <h1 id="referenceTitle">Reference</h1>
+        <p id="referenceSummary">Loading reference...</p>
+      </section>
+
+      <section class="section page-section reference-detail-layout">
+        <article class="glass-panel reference-detail-card">
+          <div class="rich-content" id="referenceBody"></div>
+          <div class="inline-actions">
+            <a class="button ghost" href="references.html">Back to references</a>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p data-content="site.disclaimer">Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.</p>
+      <span>© 2026 Beyond Peps</span>
+    </footer>
+    <script src="scripts/content-defaults.js"></script>
+    <script src="scripts/supabase-env.js"></script>
+    <script src="scripts/supabase-api.js"></script>
+    <script src="scripts/cart.js"></script>
+    <script src="scripts/site.js"></script>
+    <script src="scripts/reference-page.js"></script>
+  </body>
+</html>

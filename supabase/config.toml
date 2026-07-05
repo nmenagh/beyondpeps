@@ -1,0 +1,18 @@
+project_id = "beyond-peps"
+
+[api]
+enabled = true
+port = 54321
+
+[db]
+port = 54322
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:5173"
+additional_redirect_urls = ["https://beyondpeps.com"]

@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Calculators | Beyond Peps</title>
+    <meta name="description" content="Educational research calculators for peptide supply planning and GLP half-life estimation.">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Beyond Peps home">
+        <span class="brand-mark">BP</span>
+        <span>Beyond Peps</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="shop.html">Shop</a>
+        <a href="references.html">References</a>
+        <a class="is-active" href="calculators.html">Calculators</a>
+        <a href="blog.html">Blog</a>
+        <a href="cart.html">Cart <span data-cart-count>0</span></a>
+      </nav>
+      <a class="admin-link account-pill" href="account.html" data-account-pill>Login</a>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <p class="eyebrow">Calculators</p>
+        <h1>Research calculators for measured planning.</h1>
+        <p>Use these tools for educational research planning, unit conversion, and simplified half-life visualization. They are not medical advice.</p>
+      </section>
+
+      <section class="section page-section calculator-stack">
+        <article class="research-calculator glass-panel" id="peptide-calc">
+          <div class="calculator-header">
+            <p class="eyebrow">Peptide calculator</p>
+            <h2>Research vial and unit planner</h2>
+            <p>Calculate concentration, estimated draw volume, units, vial duration, and cycle supply needs for laboratory research planning.</p>
+          </div>
+
+          <div class="calc-notice">
+            <strong>Research use only.</strong> This calculator is for educational laboratory planning and is not intended for human or animal use.
+          </div>
+
+          <div class="peptide-grid">
+            <div class="calc-panel">
+              <div class="calc-fields">
+                <label>
+                  Enter vial amount
+                  <span>mg</span>
+                  <input class="calc-input" type="number" id="vial-mg" inputmode="decimal" placeholder="e.g., 10" min="0" step="any">
+                </label>
+
+                <label>
+                  Enter BAC water
+                  <span>mL</span>
+                  <input class="calc-input" type="number" id="bac-water" inputmode="decimal" placeholder="e.g., 2" min="0" step="any">
+                </label>
+
+                <div>
+                  <div class="calc-label">Select syringe size</div>
+                  <div class="segmented-control" role="group" aria-label="Syringe size">
+                    <button class="pc-syringe-btn" type="button" data-units="30">0.3 mL<span>30 units</span></button>
+                    <button class="pc-syringe-btn" type="button" data-units="50">0.5 mL<span>50 units</span></button>
+                    <button class="pc-syringe-btn is-active" type="button" data-units="100">1 mL<span>100 units</span></button>
+                  </div>
+                </div>
+
+                <div class="calc-result-inline">
+                  <span>Concentration</span>
+                  <strong id="pc-concentration">0.00 mg/mL</strong>
+                </div>
+
+                <div>
+                  <div class="calc-label">Enter dosage</div>
+                  <div class="inline-inputs">
+                    <input class="calc-input" type="number" id="dosage" inputmode="decimal" placeholder="e.g., 0.5 or 500" min="0" step="any">
+                    <select class="calc-input" id="dosage-unit" aria-label="Dosage unit">
+                      <option value="mg">mg</option>
+                      <option value="mcg">mcg</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="result-grid">
+                  <div><span>Dosage in mL</span><strong id="pc-dosage-ml">0.000 mL</strong></div>
+                  <div><span>Dosage in Units</span><strong id="pc-dosage-units">0.0</strong></div>
+                  <div><span>Doses Per Vial</span><strong id="pc-doses-per-vial">0.0</strong></div>
+                  <div><span>Weeks Vial Lasts</span><strong id="pc-weeks-vial">—</strong></div>
+                </div>
+
+                <label>
+                  Frequency of dose
+                  <span>per week</span>
+                  <select class="calc-input" id="dose-frequency">
+                    <option value="1">1x per week</option>
+                    <option value="2">2x per week</option>
+                    <option value="3">3x per week</option>
+                    <option value="4">4x per week</option>
+                    <option value="5">5x per week</option>
+                    <option value="6">6x per week</option>
+                    <option value="7" selected>Daily</option>
+                  </select>
+                </label>
+
+                <label>
+                  Cycle length
+                  <span>weeks</span>
+                  <input class="calc-input" type="number" id="cycle-weeks" inputmode="decimal" placeholder="e.g., 12" min="0" step="any">
+                </label>
+
+                <div class="result-grid compact">
+                  <div><span>Vials Needed</span><strong id="pc-vials-needed">—</strong></div>
+                  <div><span>BAC Water Needed</span><strong id="pc-bac-needed">—</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="calc-panel syringe-panel" aria-label="Syringe visual guide">
+              <span class="calc-label">Visual guide</span>
+              <svg id="syringe-svg" viewBox="0 0 150 430" xmlns="http://www.w3.org/2000/svg">
+                <rect x="6" y="4" width="90" height="13" rx="3" class="syringe-stroke-fill"/>
+                <rect x="43" y="17" width="16" height="16" rx="2" class="syringe-stroke-fill"/>
+                <rect x="30" y="33" width="52" height="12" rx="3" class="syringe-gasket"/>
+                <rect x="30" y="33" width="52" height="313" rx="5" fill="none" class="syringe-outline"/>
+                <rect x="31.5" y="58" width="49" height="287" rx="2" class="syringe-glass"/>
+                <defs>
+                  <clipPath id="barrel-clip">
+                    <rect x="31.5" y="58" width="49" height="287" rx="2"/>
+                  </clipPath>
+                </defs>
+                <rect id="fill-rect" x="31.5" y="345" width="49" height="0" clip-path="url(#barrel-clip)"/>
+                <g id="tick-group"></g>
+                <path d="M39 346 L73 346 L68 363 L44 363 Z" class="syringe-stroke-fill"/>
+                <rect x="51" y="363" width="10" height="48" rx="1.5" class="syringe-needle"/>
+                <polygon points="51,411 61,411 56,430" class="syringe-needle"/>
+              </svg>
+              <strong id="syringe-unit-display">100 Units</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="research-calculator glass-panel" id="glp-half-life-calculator">
+          <div class="calculator-header">
+            <p class="eyebrow">GLP half-life estimator</p>
+            <h2>Visualize estimated accumulation over time</h2>
+            <p>Enter weekly dose amounts and select a half-life profile to estimate how levels may rise, decline, and accumulate after each scheduled dose.</p>
+          </div>
+
+          <div class="glp-grid">
+            <div class="calc-panel">
+              <h3 class="calc-section-title">Calculator settings</h3>
+
+              <div class="calc-label">Half-life profile</div>
+              <div class="glp-half-life-options" role="group" aria-label="Half-life profile">
+                <button class="glp-half-life-btn is-active" type="button" data-half-life="7" data-profile="GLP-1 (Sema)">GLP-1<span>Sema</span></button>
+                <button class="glp-half-life-btn" type="button" data-half-life="5" data-profile="GLP-2 (Tirz)">GLP-2<span>Tirz</span></button>
+                <button class="glp-half-life-btn" type="button" data-half-life="6" data-profile="GLP-3 (Reta)">GLP-3<span>Reta</span></button>
+                <button class="glp-half-life-btn" type="button" data-half-life="custom" data-profile="Custom">Custom<span>Half-life</span></button>
+              </div>
+
+              <label class="glp-custom-half-life" id="glpCustomHalfLifeWrap">
+                Custom half-life
+                <span>days</span>
+                <input id="glpCustomHalfLife" class="calc-input" type="number" value="7" min="0.1" step="0.1">
+              </label>
+
+              <div class="calc-result-inline">
+                <span id="glpSelectedProfile">GLP-1 (Sema)</span>
+                <strong id="glpSelectedHalfLife">7 days</strong>
+              </div>
+
+              <label>
+                Dosing interval
+                <span>days</span>
+                <input id="glpInterval" class="calc-input" type="number" value="7" min="1" step="1">
+              </label>
+
+              <label>
+                Show extra days after last dose
+                <span>days</span>
+                <input id="glpExtraDays" class="calc-input" type="number" value="7" min="0" step="1">
+              </label>
+
+              <div class="glp-dose-table">
+                <div class="glp-dose-head">
+                  <div>Week</div>
+                  <div>Dose Amount</div>
+                  <div></div>
+                </div>
+                <div id="glpDoseRows"></div>
+              </div>
+
+              <div class="glp-actions">
+                <button class="button primary" id="glpAddWeek" type="button">Add Week</button>
+                <button class="button ghost" id="glpReset" type="button">Reset</button>
+              </div>
+            </div>
+
+            <div class="calc-panel">
+              <h3 class="calc-section-title">Estimated level chart</h3>
+              <div class="glp-chart-wrap">
+                <canvas id="glpChart" width="900" height="430"></canvas>
+              </div>
+              <div class="result-grid glp-stats">
+                <div><span>Estimated Peak</span><strong id="glpPeak">—</strong></div>
+                <div><span>Final Estimated Level</span><strong id="glpFinal">—</strong></div>
+                <div><span>Total Entered Dose</span><strong id="glpTotalDose">—</strong></div>
+              </div>
+              <div class="calc-notice">
+                This simplified educational estimator is based only on half-life math. It does not account for absorption rate, metabolism, individual response, medical history, interactions, or clinical outcomes.
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p data-content="site.disclaimer">Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.</p>
+      <span>© 2026 Beyond Peps</span>
+    </footer>
+    <script src="scripts/content-defaults.js"></script>
+    <script src="scripts/supabase-env.js"></script>
+    <script src="scripts/supabase-api.js"></script>
+    <script src="scripts/cart.js"></script>
+    <script src="scripts/site.js"></script>
+    <script src="scripts/calculators.js"></script>
+  </body>
+</html>

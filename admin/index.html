@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Beyond Peps Admin</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="admin.css">
+  </head>
+  <body class="admin-body">
+    <header class="admin-shell-header">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">BP</span>
+        <span>Beyond Peps Admin</span>
+      </a>
+      <div class="admin-actions">
+        <button class="button ghost" id="resetContent" type="button">Reset demo</button>
+        <button class="button primary" id="saveContent" type="button">Save changes</button>
+      </div>
+    </header>
+
+    <section class="admin-lock glass-panel" id="adminLock">
+      <p class="eyebrow">Admin access</p>
+      <h1>Sign in with an admin account.</h1>
+      <p>The admin panel uses the same site login as customer accounts. Once your account has admin access, you can edit content freely without logging into Supabase here.</p>
+      <div class="inline-actions">
+        <a class="button primary" href="../account.html">Go to account login</a>
+        <a class="button ghost" href="../index.html">Back to site</a>
+      </div>
+      <p class="admin-note" id="adminAuthStatus">Checking access...</p>
+    </section>
+
+    <main class="admin-shell">
+      <aside class="admin-sidebar glass-panel">
+        <div class="admin-summary" id="adminSummary" aria-label="Content summary"></div>
+        <div class="admin-auth">
+          <p class="eyebrow">Session</p>
+          <p id="adminSessionStatus">Admin session active</p>
+          <button class="button ghost" id="adminSignOut" type="button">Sign out</button>
+        </div>
+        <button class="tab is-active" data-panel="sitePanel" type="button">Site copy</button>
+        <button class="tab" data-panel="productsPanel" type="button">Products</button>
+        <button class="tab" data-panel="referencesPanel" type="button">References</button>
+        <button class="tab" data-panel="postsPanel" type="button">Blog</button>
+        <button class="tab" data-panel="exportPanel" type="button">Import/export</button>
+      </aside>
+
+      <section class="admin-workspace">
+        <div class="admin-panel is-active" id="sitePanel">
+          <div class="panel-heading">
+          <p class="eyebrow">Content</p>
+            <h1>Site copy</h1>
+          </div>
+          <div class="form-grid" id="siteFields"></div>
+        </div>
+
+        <div class="admin-panel" id="productsPanel">
+          <div class="panel-heading">
+            <p class="eyebrow">Catalog</p>
+            <h1>Products</h1>
+            <button class="button ghost" data-add="products" type="button">Add product</button>
+          </div>
+          <div class="editor-list" id="productsEditor"></div>
+        </div>
+
+        <div class="admin-panel" id="referencesPanel">
+          <div class="panel-heading">
+            <p class="eyebrow">Library</p>
+            <h1>References</h1>
+            <button class="button ghost" data-add="references" type="button">Add reference</button>
+          </div>
+          <div class="editor-list" id="referencesEditor"></div>
+        </div>
+
+        <div class="admin-panel" id="postsPanel">
+          <div class="panel-heading">
+            <p class="eyebrow">Publishing</p>
+            <h1>Blog posts</h1>
+            <button class="button ghost" data-add="posts" type="button">Add post</button>
+          </div>
+          <div class="editor-list" id="postsEditor"></div>
+        </div>
+
+        <div class="admin-panel" id="exportPanel">
+          <div class="panel-heading">
+            <p class="eyebrow">Data</p>
+            <h1>Import/export</h1>
+          </div>
+          <textarea id="jsonEditor" spellcheck="false"></textarea>
+          <div class="inline-actions">
+            <button class="button ghost" id="refreshJson" type="button">Refresh JSON</button>
+            <button class="button primary" id="applyJson" type="button">Apply JSON</button>
+          </div>
+          <p class="admin-note">Saving writes to browser storage for this prototype. Later, this screen can post the same shape to a database-backed admin API.</p>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="../scripts/content-defaults.js"></script>
+    <script src="../scripts/supabase-env.js"></script>
+    <script src="../scripts/supabase-api.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

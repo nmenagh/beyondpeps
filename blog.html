@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blog | Beyond Peps</title>
+    <meta name="description" content="Beyond Peps blog posts about supply organization, calculators, labeling, and peptide workflow education.">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Beyond Peps home">
+        <span class="brand-mark">BP</span>
+        <span>Beyond Peps</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="shop.html">Shop</a>
+        <a href="references.html">References</a>
+        <a href="calculators.html">Calculators</a>
+        <a class="is-active" href="blog.html">Blog</a>
+        <a href="cart.html">Cart <span data-cart-count>0</span></a>
+      </nav>
+      <a class="admin-link account-pill" href="account.html" data-account-pill>Login</a>
+    </header>
+
+    <main>
+      <section class="page-hero image-page-hero" data-blog-hero>
+        <p class="eyebrow">Journal</p>
+        <h1>Notes for cleaner supply workflows.</h1>
+        <p>Drafts and published posts are managed from the admin panel. This page is ready to become the editorial side of Beyond Peps.</p>
+      </section>
+      <section class="section page-section">
+        <div class="stack-list" id="postList"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p data-content="site.disclaimer">Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.</p>
+      <span>© 2026 Beyond Peps</span>
+    </footer>
+    <script src="scripts/content-defaults.js"></script>
+    <script src="scripts/supabase-env.js"></script>
+    <script src="scripts/supabase-api.js"></script>
+    <script src="scripts/cart.js"></script>
+    <script src="scripts/site.js"></script>
+  </body>
+</html>

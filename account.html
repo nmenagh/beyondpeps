@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Account | Beyond Peps</title>
+    <meta name="description" content="Manage your Beyond Peps account, shipping address, and billing address.">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Beyond Peps home">
+        <span class="brand-mark">BP</span>
+        <span>Beyond Peps</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="shop.html">Shop</a>
+        <a href="references.html">References</a>
+        <a href="calculators.html">Calculators</a>
+        <a href="blog.html">Blog</a>
+        <a href="cart.html">Cart <span data-cart-count>0</span></a>
+      </nav>
+      <a class="admin-link account-pill is-active" href="account.html" data-account-pill>Login</a>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <p class="eyebrow">Account</p>
+        <h1>Save your address for easier checkout.</h1>
+        <p>Sign in to store shipping and billing details securely in your Beyond Peps account.</p>
+      </section>
+
+      <section class="section page-section account-layout">
+        <form class="glass-panel account-card" id="authForm">
+          <p class="eyebrow">Sign in</p>
+          <h2>Account access</h2>
+          <label>
+            Email
+            <input id="accountEmail" type="email" autocomplete="email" required>
+          </label>
+          <label>
+            Password
+            <input id="accountPassword" type="password" autocomplete="current-password" required>
+          </label>
+          <div class="inline-actions">
+            <button class="button primary" id="signInButton" type="submit">Sign in</button>
+            <button class="button ghost" id="signUpButton" type="button">Create account</button>
+          </div>
+          <p class="admin-note" id="authStatus">Use the same login for account and admin access.</p>
+        </form>
+
+        <section class="account-shell is-hidden" id="profileForm">
+          <aside class="glass-panel account-rail" aria-label="Account menu">
+            <button class="account-menu-item is-active" type="button" data-account-panel-trigger="orders">
+              <span class="account-menu-icon">01</span>
+              Orders
+            </button>
+            <button class="account-menu-item" type="button" data-account-panel-trigger="addresses">
+              <span class="account-menu-icon">02</span>
+              Addresses
+            </button>
+            <button class="account-menu-item" type="button" data-account-panel-trigger="settings">
+              <span class="account-menu-icon">03</span>
+              Account settings
+            </button>
+            <button class="account-menu-item" type="button" data-account-panel-trigger="security">
+              <span class="account-menu-icon">04</span>
+              Password
+            </button>
+            <a class="account-menu-item is-hidden" id="accountAdminLink" href="admin/index.html">
+              <span class="account-menu-icon">AD</span>
+              Admin
+            </a>
+            <button class="account-menu-item sign-out" id="accountSignOut" type="button">
+              <span class="account-menu-icon">--</span>
+              Sign out
+            </button>
+          </aside>
+
+          <div class="account-workspace">
+            <div class="account-card-header account-dashboard-header">
+              <div>
+                <p class="eyebrow">Account</p>
+                <h2 id="accountGreeting">Your dashboard</h2>
+                <p class="admin-note" id="profileStatus"></p>
+              </div>
+              <a class="button ghost" href="cart.html">Return to cart</a>
+            </div>
+
+            <section class="glass-panel account-panel is-active" id="ordersPanel" data-account-panel="orders">
+              <div class="account-panel-heading">
+                <p class="eyebrow">Orders</p>
+                <h3>Order history</h3>
+              </div>
+              <div class="account-empty-state" id="ordersEmpty">
+                <span class="empty-icon">BP</span>
+                <p>No orders yet</p>
+                <a class="button primary" href="shop.html">Shop research supplies</a>
+              </div>
+              <div class="order-list is-hidden" id="orderList"></div>
+            </section>
+
+            <section class="glass-panel account-panel" id="addressesPanel" data-account-panel="addresses">
+              <div class="account-panel-heading split">
+                <div>
+                  <p class="eyebrow">Addresses</p>
+                  <h3>Saved addresses</h3>
+                </div>
+              </div>
+              <form id="addressesForm">
+                <div class="address-grid">
+                  <fieldset>
+                    <legend>Shipping address</legend>
+                    <label>Ship to name<input id="shipName" type="text" autocomplete="shipping name"></label>
+                    <label>Address line 1<input id="shipLine1" type="text" autocomplete="shipping address-line1"></label>
+                    <label>Address line 2<input id="shipLine2" type="text" autocomplete="shipping address-line2"></label>
+                    <label>City<input id="shipCity" type="text" autocomplete="shipping address-level2"></label>
+                    <label>State<select id="shipState" autocomplete="shipping address-level1" data-state-select></select></label>
+                    <label>ZIP code<input id="shipPostal" type="text" autocomplete="shipping postal-code"></label>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend>Billing address</legend>
+                    <label class="checkbox-row field-wide">
+                      <input id="billingSameAsShipping" type="checkbox">
+                      <span>Use shipping address as billing address</span>
+                    </label>
+                    <label>Bill to name<input id="billName" type="text" autocomplete="billing name"></label>
+                    <label>Address line 1<input id="billLine1" type="text" autocomplete="billing address-line1"></label>
+                    <label>Address line 2<input id="billLine2" type="text" autocomplete="billing address-line2"></label>
+                    <label>City<input id="billCity" type="text" autocomplete="billing address-level2"></label>
+                    <label>State<select id="billState" autocomplete="billing address-level1" data-state-select></select></label>
+                    <label>ZIP code<input id="billPostal" type="text" autocomplete="billing postal-code"></label>
+                  </fieldset>
+                </div>
+                <div class="inline-actions">
+                  <button class="button primary" type="submit">Save addresses</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="glass-panel account-panel" id="settingsPanel" data-account-panel="settings">
+              <div class="account-panel-heading">
+                <p class="eyebrow">Profile</p>
+                <h3>Account settings</h3>
+              </div>
+              <form class="account-form-grid" id="settingsForm">
+                <label>
+                  First name
+                  <input id="firstName" type="text" autocomplete="given-name">
+                </label>
+                <label>
+                  Last name
+                  <input id="lastName" type="text" autocomplete="family-name">
+                </label>
+                <label class="field-wide">
+                  Email
+                  <input id="profileEmail" type="email" autocomplete="email">
+                </label>
+                <div class="inline-actions field-wide">
+                  <button class="button primary" type="submit">Save changes</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="glass-panel account-panel" id="securityPanel" data-account-panel="security">
+              <div class="account-panel-heading">
+                <p class="eyebrow">Security</p>
+                <h3>Change password</h3>
+              </div>
+              <form class="account-form-grid" id="passwordForm">
+                <label class="field-wide">
+                  Current password
+                  <input id="currentPassword" type="password" autocomplete="current-password">
+                </label>
+                <label>
+                  New password
+                  <input id="newPassword" type="password" autocomplete="new-password">
+                </label>
+                <label>
+                  Confirm new password
+                  <input id="confirmPassword" type="password" autocomplete="new-password">
+                </label>
+                <div class="inline-actions field-wide">
+                  <button class="button primary" type="submit">Update password</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p data-content="site.disclaimer">Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.</p>
+      <span>© 2026 Beyond Peps</span>
+    </footer>
+    <script src="scripts/content-defaults.js"></script>
+    <script src="scripts/supabase-env.js"></script>
+    <script src="scripts/supabase-api.js"></script>
+    <script src="scripts/cart.js"></script>
+    <script src="scripts/site.js"></script>
+    <script src="scripts/account.js"></script>
+  </body>
+</html>

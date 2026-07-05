@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Beyond Peps | Research Supplies and Peptide References</title>
+    <meta name="description" content="Beyond Peps sells premium research supplies, educational references, calculators, and workflow tools.">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Beyond Peps home">
+        <span class="brand-mark">BP</span>
+        <span>Beyond Peps</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="shop.html">Shop</a>
+        <a href="references.html">References</a>
+        <a href="calculators.html">Calculators</a>
+        <a href="blog.html">Blog</a>
+        <a href="cart.html">Cart <span data-cart-count>0</span></a>
+      </nav>
+      <a class="admin-link account-pill" href="account.html" data-account-pill>Login</a>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-media" aria-hidden="true">
+          <img class="hero-image" src="assets/hero-liquid-lab.png" alt="">
+          <div class="hero-sheen"></div>
+        </div>
+        <div class="hero-copy glass-panel">
+          <p class="eyebrow" data-content="site.heroEyebrow">Research supply lab</p>
+          <h1 id="hero-title" data-content="site.heroTitle">Research supplies, reference tools, and measured routines.</h1>
+          <p class="hero-body" data-content="site.heroBody">Beyond Peps brings research supplies, clear reference material, calculators, and practical tools into one premium dark-glass workspace.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="shop.html" data-content="site.primaryCta">Shop research supplies</a>
+            <a class="button ghost" href="references.html" data-content="site.secondaryCta">Explore references</a>
+          </div>
+        </div>
+        <div class="hero-metrics glass-strip" aria-label="Store highlights">
+          <span><strong>01</strong> Supplies</span>
+          <span><strong>02</strong> References</span>
+          <span><strong>03</strong> Calculators</span>
+        </div>
+      </section>
+
+      <section class="section intro-band">
+        <p class="announcement" data-content="site.announcement">Educational resources and research supply essentials for careful lab workflows.</p>
+        <div class="value-grid">
+          <article>
+            <span>Measured</span>
+            <h2>Tools that respect units, labels, and repeatable workflows.</h2>
+          </article>
+          <article>
+            <span>Readable</span>
+            <h2>Reference material written for careful users, not hype cycles.</h2>
+          </article>
+          <article>
+            <span>Expandable</span>
+            <h2>Built to grow into payments, accounts, and managed inventory.</h2>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="shop">
+        <div class="section-heading">
+          <p class="eyebrow">Research catalog</p>
+          <h2>Launch collection</h2>
+          <p>Initial products are staged as coming soon while payment and fulfillment choices are finalized.</p>
+        </div>
+        <div class="product-grid" id="productGrid"></div>
+      </section>
+
+      <section class="section split-section" id="references">
+        <div class="section-heading">
+          <p class="eyebrow">Reference library</p>
+          <h2>Clear educational material beside the products.</h2>
+          <p>References are editable in the admin panel and designed to support calculators, product education, and blog posts.</p>
+        </div>
+        <div class="reference-list" id="referenceList"></div>
+      </section>
+
+      <section class="section split-section" id="calculators">
+        <div class="section-heading">
+          <p class="eyebrow">Calculators</p>
+          <h2>Research math tools with a cleaner interface.</h2>
+          <p>The calculator page now includes a peptide unit planner and a GLP half-life estimator styled for the Beyond Peps research workflow.</p>
+        </div>
+        <a class="button primary" href="calculators.html">Open calculators</a>
+      </section>
+
+      <section class="section" id="journal">
+        <div class="section-heading">
+          <p class="eyebrow">Journal</p>
+          <h2>Blog drafts</h2>
+          <p>Use the admin panel to develop posts before publishing them into the storefront.</p>
+        </div>
+        <div class="post-grid" id="postGrid"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p data-content="site.disclaimer">Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.</p>
+      <span>© 2026 Beyond Peps</span>
+    </footer>
+
+    <script src="scripts/content-defaults.js"></script>
+    <script src="scripts/supabase-env.js"></script>
+    <script src="scripts/supabase-api.js"></script>
+    <script src="scripts/cart.js"></script>
+    <script src="scripts/site.js"></script>
+  </body>
+</html>

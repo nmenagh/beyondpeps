@@ -1,0 +1,519 @@
+const STORAGE_KEY = "beyondPepsContent";
+
+let content = null;
+let adminAllowed = false;
+
+const siteSchema = [
+  ["name", "Site name"],
+  ["domain", "Domain"],
+  ["announcement", "Announcement", "textarea"],
+  ["heroEyebrow", "Hero eyebrow"],
+  ["heroTitle", "Hero title", "textarea"],
+  ["heroBody", "Hero body", "textarea"],
+  ["blogHeroImageUrl", "Blog hero image URL", "image", "blog"],
+  ["primaryCta", "Primary CTA"],
+  ["secondaryCta", "Secondary CTA"],
+  ["disclaimer", "Footer disclaimer", "textarea"]
+];
+
+async function loadContent() {
+  const defaults = cloneDefaultContent();
+  try {
+    const remoteContent = await window.BeyondPepsSupabase?.loadContent(defaults, { includeDrafts: true });
+    if (hasUsableContent(remoteContent)) {
+      storageSet(STORAGE_KEY, JSON.stringify(remoteContent));
+      return remoteContent;
+    }
+  } catch (error) {
+    console.warn("Supabase content unavailable, using local admin content.", error);
+  }
+
+  const stored = storageGet(STORAGE_KEY);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      if (hasUsableContent(parsed)) return parsed;
+      const fallback = cloneDefaultContent();
+      storageSet(STORAGE_KEY, JSON.stringify(fallback));
+      return fallback;
+    } catch {
+      storageRemove(STORAGE_KEY);
+    }
+  }
+
+  try {
+    const response = await fetch("../data/site-content.json");
+    if (!response.ok) throw new Error("Content request failed");
+    const data = await response.json();
+    storageSet(STORAGE_KEY, JSON.stringify(data));
+    return data;
+  } catch {
+    const data = defaults;
+    storageSet(STORAGE_KEY, JSON.stringify(data));
+    return data;
+  }
+}
+
+async function saveContent() {
+  if (!adminAllowed) {
+    toast("Admin access required.");
+    return;
+  }
+
+  try {
+    if (window.BeyondPepsSupabase?.isConfigured()) {
+      await window.BeyondPepsSupabase.saveContent(content);
+      toast("Changes saved to Supabase.");
+    } else {
+      toast("Changes saved locally.");
+    }
+  } catch (error) {
+    toast(`Supabase save failed: ${error.message}`);
+  }
+
+  storageSet(STORAGE_KEY, JSON.stringify(content));
+  updateJsonEditor();
+}
+
+function cloneDefaultContent() {
+  return JSON.parse(JSON.stringify(window.BEYOND_PEPS_DEFAULT_CONTENT || {
+    site: {},
+    categories: [],
+    products: [],
+    references: [],
+    posts: []
+  }));
+}
+
+function storageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function storageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    toast("Browser storage is unavailable, so changes are visible only until refresh.");
+    return false;
+  }
+  return true;
+}
+
+function storageRemove(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {}
+}
+
+function hasUsableContent(data) {
+  return Boolean(
+    data?.schemaVersion >= 2 &&
+    data?.site?.heroTitle &&
+    Array.isArray(data.products) &&
+    Array.isArray(data.references) &&
+    Array.isArray(data.posts)
+  );
+}
+
+function slugify(value) {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || `item-${Date.now()}`;
+}
+
+function normalizeContent(data) {
+  data.references = (data.references || []).map((reference, index) => ({
+    slug: reference.slug || reference.id || slugify(reference.title || `reference-${index + 1}`),
+    title: reference.title || "Untitled reference",
+    type: reference.type || "Guide",
+    status: reference.status || "Published",
+    summary: reference.summary || "",
+    body: reference.body || reference.summary || ""
+  }));
+  return data;
+}
+
+function toast(message) {
+  const node = document.querySelector("#toast");
+  node.textContent = message;
+  node.classList.add("is-visible");
+  window.setTimeout(() => node.classList.remove("is-visible"), 2200);
+}
+
+function cleanRichHtml(html = "") {
+  const allowedTags = new Set(["A", "B", "BLOCKQUOTE", "BR", "DIV", "EM", "H2", "H3", "H4", "HR", "I", "LI", "OL", "P", "SPAN", "STRONG", "TABLE", "TBODY", "TD", "TH", "THEAD", "TR", "U", "UL"]);
+  const allowedStyles = new Set(["font-weight", "font-style", "text-align", "text-decoration"]);
+  const safeAnchor = /^[A-Za-z_][A-Za-z0-9:_.-]*$/;
+  const template = document.createElement("template");
+  template.innerHTML = html;
+
+  template.content.querySelectorAll("*").forEach((node) => {
+    if (!allowedTags.has(node.tagName)) {
+      node.replaceWith(...node.childNodes);
+      return;
+    }
+
+    [...node.attributes].forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      if (name === "style") {
+        const bookmark = attribute.value.match(/mso-bookmark\s*:\s*([^;]+)/i)?.[1]?.trim();
+        if (bookmark && safeAnchor.test(bookmark) && !node.id) {
+          node.id = bookmark;
+        }
+      }
+
+      if ((name === "id" || name === "name") && safeAnchor.test(attribute.value.trim())) {
+        return;
+      }
+
+      if (name === "href" && node.tagName === "A") {
+        const href = attribute.value.trim();
+        if (/^(https?:|mailto:|tel:|#|\/)/i.test(href)) return;
+      }
+
+      if (name === "style") {
+        const safeStyles = attribute.value.split(";").map((rule) => rule.trim()).filter((rule) => {
+          const property = rule.split(":")[0]?.trim().toLowerCase();
+          return allowedStyles.has(property);
+        });
+        if (safeStyles.length) {
+          node.setAttribute("style", safeStyles.join("; "));
+          return;
+        }
+      }
+
+      node.removeAttribute(attribute.name);
+    });
+  });
+
+  return template.innerHTML.trim();
+}
+
+function field(label, value, onInput, type = "text", wide = false, uploadFolder = "uploads") {
+  if (type === "richtext") {
+    const wrap = document.createElement("div");
+    wrap.className = "admin-field richtext-field field-wide";
+
+    const fieldLabel = document.createElement("span");
+    fieldLabel.className = "admin-field-label";
+    fieldLabel.textContent = label;
+
+    const toolbar = document.createElement("div");
+    toolbar.className = "richtext-toolbar";
+    [
+      ["bold", "Bold"],
+      ["italic", "Italic"],
+      ["underline", "Underline"],
+      ["insertUnorderedList", "Bullet list"],
+      ["insertOrderedList", "Numbered list"],
+      ["formatBlock", "Heading", "H3"],
+      ["formatBlock", "Paragraph", "P"]
+    ].forEach(([command, text, argument]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = text;
+      button.addEventListener("click", () => {
+        editor.focus();
+        document.execCommand(command, false, argument);
+        onInput(cleanRichHtml(editor.innerHTML));
+      });
+      toolbar.append(button);
+    });
+
+    const editor = document.createElement("div");
+    editor.className = "richtext-editor";
+    editor.contentEditable = "true";
+    editor.innerHTML = cleanRichHtml(value || "");
+    editor.addEventListener("input", () => onInput(cleanRichHtml(editor.innerHTML)));
+    editor.addEventListener("paste", () => {
+      window.setTimeout(() => {
+        editor.innerHTML = cleanRichHtml(editor.innerHTML);
+        onInput(editor.innerHTML);
+      }, 0);
+    });
+    editor.addEventListener("blur", () => {
+      editor.innerHTML = cleanRichHtml(editor.innerHTML);
+      onInput(editor.innerHTML);
+    });
+
+    wrap.append(fieldLabel, toolbar, editor);
+    return wrap;
+  }
+
+  const wrap = document.createElement("label");
+  if (wide || type === "textarea" || type === "image") wrap.classList.add("field-wide");
+  wrap.textContent = label;
+
+  if (type === "image") {
+    wrap.classList.add("image-field");
+    const preview = document.createElement("div");
+    preview.className = "image-preview";
+    preview.innerHTML = value ? `<img src="${escapeAttribute(value)}" alt="">` : `<span>No image selected</span>`;
+
+    const input = document.createElement("input");
+    input.type = "url";
+    input.value = value ?? "";
+    input.placeholder = "Image URL or upload below";
+    input.addEventListener("input", () => {
+      onInput(input.value);
+      preview.innerHTML = input.value ? `<img src="${escapeAttribute(input.value)}" alt="">` : `<span>No image selected</span>`;
+    });
+
+    const upload = document.createElement("input");
+    upload.type = "file";
+    upload.accept = "image/*";
+    upload.addEventListener("change", async () => {
+      const file = upload.files?.[0];
+      if (!file) return;
+      try {
+        preview.innerHTML = `<span>Uploading...</span>`;
+        const url = await window.BeyondPepsSupabase.uploadMedia(file, uploadFolder);
+        input.value = url;
+        onInput(url);
+        preview.innerHTML = `<img src="${escapeAttribute(url)}" alt="">`;
+        updateJsonEditor();
+        toast("Image uploaded. Save changes to persist the URL.");
+      } catch (error) {
+        preview.innerHTML = value ? `<img src="${escapeAttribute(value)}" alt="">` : `<span>No image selected</span>`;
+        toast(`Upload failed: ${error.message}`);
+      } finally {
+        upload.value = "";
+      }
+    });
+
+    wrap.append(preview, input, upload);
+    return wrap;
+  }
+
+  const control = document.createElement(type === "textarea" ? "textarea" : "input");
+  if (type !== "textarea") control.type = type;
+  control.value = value ?? "";
+  control.addEventListener("input", () => {
+    onInput(type === "number" ? Number(control.value) : control.value);
+  });
+  wrap.append(control);
+  return wrap;
+}
+
+function escapeAttribute(value = "") {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;"
+  })[char]);
+}
+
+function renderSiteFields() {
+  const root = document.querySelector("#siteFields");
+  root.innerHTML = "";
+  siteSchema.forEach(([key, label, type, uploadFolder]) => {
+    root.append(field(label, content.site[key], (value) => {
+      content.site[key] = value;
+    }, type || "text", key === "domain" ? false : type === "textarea", uploadFolder));
+  });
+}
+
+function renderCollection(collection, rootSelector, schema) {
+  const root = document.querySelector(rootSelector);
+  root.innerHTML = "";
+
+  content[collection].forEach((item, index) => {
+    const card = document.createElement("article");
+    card.className = "editor-card";
+    const title = document.createElement("h2");
+    title.textContent = `${index + 1}. ${item.name || item.title || "Untitled"}`;
+    card.append(title);
+
+    schema.forEach(([key, label, type, wide, uploadFolder]) => {
+      card.append(field(label, item[key], (value) => {
+        item[key] = value;
+        title.textContent = `${index + 1}. ${item.name || item.title || "Untitled"}`;
+      }, type || "text", wide, uploadFolder));
+    });
+
+    const remove = document.createElement("button");
+    remove.className = "remove-item";
+    remove.type = "button";
+    remove.textContent = "Remove item";
+    remove.addEventListener("click", () => {
+      content[collection].splice(index, 1);
+      renderAll();
+    });
+    card.append(remove);
+    root.append(card);
+  });
+}
+
+function renderCollections() {
+  renderCollection("products", "#productsEditor", [
+    ["id", "ID"],
+    ["name", "Name"],
+    ["category", "Category"],
+    ["price", "Price", "number"],
+    ["status", "Status"],
+    ["imageUrl", "Product image", "image", true, "products"],
+    ["summary", "Card summary", "textarea", true],
+    ["description", "Extended product description", "textarea", true]
+  ]);
+
+  renderCollection("references", "#referencesEditor", [
+    ["slug", "Slug"],
+    ["title", "Title"],
+    ["type", "Type"],
+    ["status", "Status"],
+    ["summary", "Card summary", "textarea", true],
+    ["body", "Reference page body", "richtext", true]
+  ]);
+
+  renderCollection("posts", "#postsEditor", [
+    ["title", "Title"],
+    ["date", "Date"],
+    ["status", "Status"],
+    ["imageUrl", "Blog card image", "image", true, "blog"],
+    ["heroImageUrl", "Blog post hero image", "image", true, "blog"],
+    ["summary", "Summary", "textarea", true]
+  ]);
+}
+
+function updateJsonEditor() {
+  document.querySelector("#jsonEditor").value = JSON.stringify(content, null, 2);
+}
+
+function renderAll() {
+  renderBackendStatus();
+  renderSummary();
+  renderSiteFields();
+  renderCollections();
+  updateJsonEditor();
+}
+
+function renderBackendStatus() {
+  const node = document.querySelector("#adminSessionStatus");
+  const lockNode = document.querySelector("#adminAuthStatus");
+  if (!window.BeyondPepsSupabase?.isConfigured()) {
+    if (node) node.textContent = "Supabase is not configured.";
+    if (lockNode) lockNode.textContent = "Supabase is not configured.";
+    return;
+  }
+  const text = adminAllowed ? "Admin session active" : "Admin access required";
+  if (node) node.textContent = text;
+  if (lockNode) lockNode.textContent = text;
+}
+
+function renderSummary() {
+  const root = document.querySelector("#adminSummary");
+  if (!root) return;
+  root.innerHTML = `
+    <article><strong>${content.products.length}</strong><span>Products</span></article>
+    <article><strong>${content.references.length}</strong><span>References</span></article>
+    <article><strong>${content.posts.length}</strong><span>Blog posts</span></article>
+  `;
+}
+
+function setupTabs() {
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach((node) => node.classList.remove("is-active"));
+      document.querySelectorAll(".admin-panel").forEach((node) => node.classList.remove("is-active"));
+      tab.classList.add("is-active");
+      document.querySelector(`#${tab.dataset.panel}`).classList.add("is-active");
+    });
+  });
+}
+
+function setupActions() {
+  document.querySelector("#saveContent").addEventListener("click", saveContent);
+  document.querySelector("#adminSignOut").addEventListener("click", () => {
+    window.BeyondPepsSupabase?.clearSession();
+    setAdminLocked("Signed out. Sign in with an admin account to continue.");
+    toast("Signed out.");
+  });
+  document.querySelector("#resetContent").addEventListener("click", async () => {
+    storageRemove(STORAGE_KEY);
+    content = cloneDefaultContent();
+    storageSet(STORAGE_KEY, JSON.stringify(content));
+    renderAll();
+    toast("Demo content restored.");
+  });
+
+  document.querySelectorAll("[data-add]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const collection = button.dataset.add;
+      const templates = {
+        products: { id: `product-${Date.now()}`, name: "New product", category: "Sterile Handling", price: 0, status: "Draft", imageUrl: "", summary: "", description: "" },
+        references: { slug: `reference-${Date.now()}`, title: "New reference", type: "Guide", status: "Published", summary: "", body: "" },
+        posts: { title: "New post", date: new Date().toISOString().slice(0, 10), status: "Draft", imageUrl: "", heroImageUrl: "", summary: "" }
+      };
+      content[collection].push(templates[collection]);
+      renderAll();
+    });
+  });
+
+  document.querySelector("#refreshJson").addEventListener("click", updateJsonEditor);
+  document.querySelector("#applyJson").addEventListener("click", () => {
+    try {
+      content = JSON.parse(document.querySelector("#jsonEditor").value);
+      saveContent();
+      renderAll();
+    } catch (error) {
+      toast(`JSON error: ${error.message}`);
+    }
+  });
+}
+
+function setAdminLocked(message = "Sign in with an admin account to continue.") {
+  adminAllowed = false;
+  document.querySelector(".admin-shell")?.classList.add("is-locked");
+  document.querySelector(".admin-shell-header")?.classList.add("is-locked");
+  document.querySelector("#adminLock")?.classList.remove("is-hidden");
+  const status = document.querySelector("#adminAuthStatus");
+  if (status) status.textContent = message;
+}
+
+function setAdminUnlocked() {
+  adminAllowed = true;
+  document.querySelector(".admin-shell")?.classList.remove("is-locked");
+  document.querySelector(".admin-shell-header")?.classList.remove("is-locked");
+  document.querySelector("#adminLock")?.classList.add("is-hidden");
+}
+
+async function requireAdmin() {
+  if (!window.BeyondPepsSupabase?.isConfigured()) {
+    setAdminLocked("Supabase is not configured.");
+    return false;
+  }
+
+  const user = await window.BeyondPepsSupabase.currentUser();
+  if (!user) {
+    setAdminLocked("You are not signed in.");
+    return false;
+  }
+
+  const isAdmin = await window.BeyondPepsSupabase.currentUserIsAdmin();
+  if (!isAdmin) {
+    setAdminLocked(`Signed in as ${user.email}, but this account is not an admin.`);
+    return false;
+  }
+
+  setAdminUnlocked();
+  return true;
+}
+
+requireAdmin().then(async (allowed) => {
+  if (!allowed) return;
+  const data = await loadContent();
+  content = normalizeContent(data);
+  setupTabs();
+  setupActions();
+  renderAll();
+}).catch((error) => {
+  setAdminLocked(error.message);
+});
