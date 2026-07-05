@@ -136,6 +136,40 @@ img {
   gap: 0.2rem;
 }
 
+.nav-toggle {
+  display: none;
+  width: 2.65rem;
+  height: 2.65rem;
+  place-items: center;
+  gap: 0.24rem;
+  padding: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.075);
+  color: var(--text);
+}
+
+.nav-toggle span {
+  display: block;
+  width: 1.1rem;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.site-header.is-menu-open .nav-toggle span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.site-header.is-menu-open .nav-toggle span:nth-child(2) {
+  opacity: 0;
+}
+
+.site-header.is-menu-open .nav-toggle span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
 .nav-links a,
 .admin-link {
   padding: 0 0.9rem;
@@ -1520,9 +1554,9 @@ legend {
 
 @media (max-width: 860px) {
   .site-header {
-    position: absolute;
-    grid-template-columns: 1fr;
-    border-radius: 18px;
+    position: fixed;
+    grid-template-columns: minmax(0, 1fr) auto;
+    border-radius: 22px;
     gap: 0.65rem;
   }
 
@@ -1531,14 +1565,29 @@ legend {
     max-width: 100%;
   }
 
+  .nav-toggle {
+    display: grid;
+    justify-self: end;
+  }
+
   .nav-links {
-    grid-column: 1;
+    grid-column: 1 / -1;
     justify-self: stretch;
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem;
-    overflow: visible;
+    grid-template-columns: 1fr;
+    gap: 0.38rem;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: max-height 220ms ease, opacity 160ms ease;
+  }
+
+  .site-header.is-menu-open .nav-links {
+    max-height: 18rem;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .nav-links a {
@@ -1551,12 +1600,17 @@ legend {
   }
 
   .account-pill {
-    grid-column: 1;
+    grid-column: 1 / -1;
     width: 100%;
+    display: none;
+  }
+
+  .site-header.is-menu-open .account-pill {
+    display: inline-flex;
   }
 
   .page-hero {
-    padding-top: clamp(18rem, 66vw, 22rem);
+    padding-top: clamp(8.5rem, 28vw, 11rem);
   }
 
   .hero {
@@ -1565,7 +1619,7 @@ legend {
   }
 
   .hero-copy {
-    margin-top: 13rem;
+    margin-top: 7rem;
   }
 
   h1 {
@@ -1675,11 +1729,11 @@ legend {
   }
 
   .page-hero {
-    padding-top: clamp(19.5rem, 78vw, 23.5rem);
+    padding-top: clamp(8.75rem, 32vw, 11.5rem);
   }
 
   .hero-copy {
-    margin-top: 14rem;
+    margin-top: 7.5rem;
   }
 }
 

@@ -235,6 +235,30 @@ function setupHeroMotion() {
   update();
 }
 
+function setupMobileNav() {
+  const header = document.querySelector(".site-header");
+  const toggle = document.querySelector(".nav-toggle");
+  if (!header || !toggle) return;
+
+  const setOpen = (open) => {
+    header.classList.toggle("is-menu-open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+  };
+
+  toggle.addEventListener("click", () => {
+    setOpen(!header.classList.contains("is-menu-open"));
+  });
+
+  header.querySelectorAll(".nav-links a, .account-pill").forEach((link) => {
+    link.addEventListener("click", () => setOpen(false));
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setOpen(false);
+  });
+}
+
 loadContent().then((content) => {
   applyContentBindings(content);
   renderProducts(content.products);
@@ -244,6 +268,7 @@ loadContent().then((content) => {
   renderPostList(content.posts);
   applyPageMedia(content);
   updateAccountPill();
+  setupMobileNav();
   setupHeroMotion();
 });
 
