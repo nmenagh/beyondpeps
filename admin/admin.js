@@ -436,14 +436,6 @@ function setupActions() {
     setAdminLocked("Signed out. Sign in with an admin account to continue.");
     toast("Signed out.");
   });
-  document.querySelector("#resetContent").addEventListener("click", async () => {
-    storageRemove(STORAGE_KEY);
-    content = cloneDefaultContent();
-    storageSet(STORAGE_KEY, JSON.stringify(content));
-    renderAll();
-    toast("Demo content restored.");
-  });
-
   document.querySelectorAll("[data-add]").forEach((button) => {
     button.addEventListener("click", () => {
       const collection = button.dataset.add;
