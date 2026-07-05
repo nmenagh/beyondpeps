@@ -32,7 +32,10 @@
       "tags": [
         "pens"
       ],
-      "featured": true
+      "featured": true,
+      "galleryImages": [
+        "/assets/products/Gray-BG-10-3ml.png"
+      ]
     },
     {
       "id": "Deluxe-Pen-Set",
@@ -47,7 +50,10 @@
       "tags": [
         "pens"
       ],
-      "featured": true
+      "featured": true,
+      "galleryImages": [
+        "/assets/products/1-2.avif"
+      ]
     },
     {
       "id": "Pen-Tip-30-Pack",
@@ -62,7 +68,10 @@
       "tags": [
         "pens"
       ],
-      "featured": true
+      "featured": true,
+      "galleryImages": [
+        "/assets/products/2-2.avif"
+      ]
     },
     {
       "id": "Pen-Starter-Set",
@@ -77,7 +86,10 @@
       "tags": [
         "pens"
       ],
-      "featured": false
+      "featured": false,
+      "galleryImages": [
+        "/assets/products/3-1.avif"
+      ]
     },
     {
       "id": "Pen-3ml-Glass-Cartridge",
@@ -92,7 +104,10 @@
       "tags": [
         "pens"
       ],
-      "featured": false
+      "featured": false,
+      "galleryImages": [
+        "/assets/products/4.avif"
+      ]
     },
     {
       "id": "Easy-Touch-Syringe-Bag-of-10",
@@ -107,7 +122,10 @@
       "tags": [
         "syringes"
       ],
-      "featured": false
+      "featured": false,
+      "galleryImages": [
+        "/assets/products/Deluxe-Pen-Set.png"
+      ]
     },
     {
       "id": "Reconstituting-Syringes-10-Pack",
@@ -122,7 +140,10 @@
       "tags": [
         "syringes"
       ],
-      "featured": false
+      "featured": false,
+      "galleryImages": [
+        "/assets/products/ChatGPT-Image-May-20-2026-10_48_56-PM.png"
+      ]
     },
     {
       "id": "Syringe-Starter-Kit",
@@ -137,7 +158,10 @@
       "tags": [
         "syringes"
       ],
-      "featured": false
+      "featured": false,
+      "galleryImages": [
+        "/assets/products/Pen-Starter-Set.png"
+      ]
     },
     {
       "id": "V2-Pen",
@@ -152,7 +176,10 @@
       "tags": [
         "pens"
       ],
-      "featured": false
+      "featured": false,
+      "galleryImages": [
+        "/assets/products/3-1.avif"
+      ]
     },
     {
       "id": "Empty-Peptide-Storage-for-10-vials",
@@ -167,7 +194,10 @@
       "tags": [
         "storage"
       ],
-      "featured": false
+      "featured": false,
+      "galleryImages": [
+        "/assets/products/1-2.avif"
+      ]
     },
     {
       "id": "BP-H-Bacteriostatic-Water",
@@ -182,7 +212,10 @@
       "tags": [
         "syringes"
       ],
-      "featured": false
+      "featured": false,
+      "galleryImages": [
+        "/assets/products/3-1.avif"
+      ]
     },
     {
       "id": "Hume-Health-Pod-Scale",
@@ -197,7 +230,10 @@
       "tags": [
         "measurement"
       ],
-      "featured": false
+      "featured": false,
+      "galleryImages": [
+        "/assets/products/ChatGPT-Image-May-20-2026-10_55_21-PM.png"
+      ]
     }
   ],
   "references": [

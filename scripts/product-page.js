@@ -23,10 +23,23 @@
     document.title = `${product.name} | Beyond Peps`;
     const stockLevel = Number.isFinite(Number(product.stockLevel)) ? Math.max(0, Math.floor(Number(product.stockLevel))) : null;
     const isOutOfStock = stockLevel === 0;
+    const galleryImages = normalizeGalleryImages(product);
+    const firstImage = galleryImages[0] || "";
     root.innerHTML = `
       <section class="product-detail section">
-        <div class="product-detail-media glass-panel">
-          ${product.imageUrl ? `<img src="${escapeHtml(product.imageUrl)}" alt="${escapeHtml(product.name)}">` : ""}
+        <div class="product-gallery-column">
+          <div class="product-detail-media glass-panel">
+            ${firstImage ? `<img id="productGalleryImage" src="${escapeHtml(firstImage)}" alt="${escapeHtml(product.name)}">` : ""}
+          </div>
+          ${galleryImages.length ? `
+            <div class="product-thumbnail-strip" id="productThumbnailStrip" aria-label="Product image gallery">
+              ${galleryImages.map((image, index) => `
+                <button class="product-thumbnail ${index === 0 ? "is-active" : ""}" type="button" data-gallery-image="${escapeHtml(image)}" aria-label="Show product image ${index + 1}">
+                  <img src="${escapeHtml(image)}" alt="">
+                </button>
+              `).join("")}
+            </div>
+          ` : ""}
         </div>
         <div class="product-detail-copy">
           <p class="eyebrow">${escapeHtml(product.category || "Research Supplies")}</p>
@@ -51,6 +64,8 @@
       </section>
     `;
 
+    setupGallery();
+
     document.querySelector("#addToCart")?.addEventListener("click", async () => {
       const quantity = Math.max(1, Number.parseInt(document.querySelector("#productQuantity").value, 10) || 1);
       const result = window.BeyondPepsCart.addItem(product, quantity);
@@ -62,6 +77,35 @@
         document.querySelector("#addToCart").textContent = "Add to cart";
       }, 1200);
     });
+  }
+
+  function setupGallery() {
+    const mainImage = document.querySelector("#productGalleryImage");
+    const strip = document.querySelector("#productThumbnailStrip");
+    if (!mainImage || !strip) return;
+
+    const centerSelected = (button) => {
+      button.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    };
+
+    strip.querySelectorAll(".product-thumbnail").forEach((button) => {
+      button.addEventListener("click", () => {
+        mainImage.src = button.dataset.galleryImage;
+        strip.querySelectorAll(".product-thumbnail").forEach((node) => node.classList.remove("is-active"));
+        button.classList.add("is-active");
+        centerSelected(button);
+      });
+    });
+
+    const active = strip.querySelector(".product-thumbnail.is-active");
+    if (active) window.setTimeout(() => centerSelected(active), 80);
+  }
+
+  function normalizeGalleryImages(product) {
+    return [...new Set([
+      product.imageUrl,
+      ...(Array.isArray(product.galleryImages) ? product.galleryImages : [])
+    ].map((url) => String(url || "").trim()).filter(Boolean))];
   }
 
   function money(value) {

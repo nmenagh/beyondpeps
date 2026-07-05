@@ -305,6 +305,60 @@ button {
   color: var(--muted);
 }
 
+.gallery-field {
+  gap: 0.8rem;
+}
+
+.gallery-editor-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.gallery-editor-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(1, 7, 11, 0.32);
+}
+
+.gallery-editor-preview {
+  grid-row: span 3;
+  width: 120px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.gallery-editor-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-editor-row input[type="file"] {
+  padding: 0.65rem;
+  color: var(--muted);
+}
+
+.gallery-add {
+  justify-self: start;
+}
+
+.gallery-remove {
+  justify-self: start;
+}
+
 .remove-item {
   justify-self: start;
   min-height: 2.4rem;

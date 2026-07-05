@@ -247,7 +247,7 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
   }
 
   const wrap = document.createElement("label");
-  if (wide || type === "textarea" || type === "image") wrap.classList.add("field-wide");
+  if (wide || type === "textarea" || type === "image" || type === "gallery") wrap.classList.add("field-wide");
   wrap.textContent = label;
 
   if (type === "image") {
@@ -291,6 +291,85 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
     return wrap;
   }
 
+  if (type === "gallery") {
+    wrap.classList.add("gallery-field");
+    const values = normalizeGalleryValue(value);
+    const list = document.createElement("div");
+    list.className = "gallery-editor-list";
+
+    const sync = () => {
+      const next = [...list.querySelectorAll("[data-gallery-url]")]
+        .map((input) => input.value.trim())
+        .filter(Boolean);
+      onInput(next);
+      updateJsonEditor();
+    };
+
+    const addRow = (url = "") => {
+      const row = document.createElement("div");
+      row.className = "gallery-editor-row";
+
+      const preview = document.createElement("div");
+      preview.className = "gallery-editor-preview";
+      preview.innerHTML = imagePreviewMarkup(url);
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = url;
+      input.placeholder = "Image URL or upload below";
+      input.dataset.galleryUrl = "true";
+      input.addEventListener("input", () => {
+        preview.innerHTML = imagePreviewMarkup(input.value);
+        sync();
+      });
+
+      const upload = document.createElement("input");
+      upload.type = "file";
+      upload.accept = "image/*";
+      upload.addEventListener("change", async () => {
+        const file = upload.files?.[0];
+        if (!file) return;
+        try {
+          preview.innerHTML = `<span>Uploading...</span>`;
+          const uploadedUrl = await window.BeyondPepsSupabase.uploadMedia(file, uploadFolder);
+          input.value = uploadedUrl;
+          preview.innerHTML = imagePreviewMarkup(uploadedUrl);
+          sync();
+          toast("Gallery image uploaded. Save changes to persist the URL.");
+        } catch (error) {
+          preview.innerHTML = imagePreviewMarkup(input.value);
+          toast(`Upload failed: ${error.message}`);
+        } finally {
+          upload.value = "";
+        }
+      });
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "remove-item gallery-remove";
+      remove.textContent = "Remove";
+      remove.addEventListener("click", () => {
+        row.remove();
+        sync();
+      });
+
+      row.append(preview, input, upload, remove);
+      list.append(row);
+    };
+
+    values.forEach(addRow);
+    if (!values.length) addRow("");
+
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "button ghost gallery-add";
+    add.textContent = "Add gallery image";
+    add.addEventListener("click", () => addRow(""));
+
+    wrap.append(list, add);
+    return wrap;
+  }
+
   const control = document.createElement(type === "textarea" ? "textarea" : "input");
   if (type !== "textarea") control.type = type;
   control.value = value ?? "";
@@ -311,6 +390,11 @@ function resolveAdminImageUrl(value = "") {
 function imagePreviewMarkup(value = "") {
   const url = resolveAdminImageUrl(value);
   return url ? `<img src="${escapeAttribute(url)}" alt="">` : `<span>No image selected</span>`;
+}
+
+function normalizeGalleryValue(value = []) {
+  if (Array.isArray(value)) return value.map((url) => String(url || "").trim()).filter(Boolean);
+  return String(value || "").split(/[\n,]+/).map((url) => url.trim()).filter(Boolean);
 }
 
 function escapeAttribute(value = "") {
@@ -373,6 +457,7 @@ function renderCollections() {
     ["stockLevel", "Stock level", "number"],
     ["status", "Status"],
     ["imageUrl", "Product image", "image", true, "products"],
+    ["galleryImages", "Product gallery images", "gallery", true, "products"],
     ["summary", "Card summary", "textarea", true],
     ["description", "Extended product description", "textarea", true]
   ]);
@@ -453,7 +538,7 @@ function setupActions() {
     button.addEventListener("click", () => {
       const collection = button.dataset.add;
       const templates = {
-        products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, status: "Draft", imageUrl: "", summary: "", description: "" },
+        products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, status: "Draft", imageUrl: "", galleryImages: [], summary: "", description: "" },
         references: { slug: `reference-${Date.now()}`, title: "New reference", type: "Guide", status: "Published", summary: "", body: "" },
         posts: { title: "New post", date: new Date().toISOString().slice(0, 10), status: "Draft", imageUrl: "", heroImageUrl: "", summary: "" }
       };

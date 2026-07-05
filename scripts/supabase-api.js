@@ -70,6 +70,7 @@
       summary: product.summary || product.description || "",
       description: product.description || product.summary || "",
       imageUrl: product.image_url || "",
+      galleryImages: normalizeGalleryImages(product.gallery_image_urls || [], product.image_url || ""),
       tags: product.tags || [],
       featured: Boolean(product.featured),
       stockLevel: product.inventory_count ?? null
@@ -87,6 +88,7 @@
       summary: product.summary || "",
       description: product.description || product.summary || "",
       image_url: product.imageUrl || null,
+      gallery_image_urls: normalizeGalleryImages(product.galleryImages || [], product.imageUrl || ""),
       price_cents: Math.round(Number(product.price || 0) * 100),
       status: uiStatusToDb(product.status || "draft"),
       tags: Array.isArray(product.tags) ? product.tags : [],
@@ -153,6 +155,14 @@
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "") || `item-${Date.now()}`;
+  }
+
+  function normalizeGalleryImages(images = [], primary = "") {
+    const list = [
+      primary,
+      ...(Array.isArray(images) ? images : String(images || "").split(/[\n,]+/))
+    ];
+    return [...new Set(list.map((url) => String(url || "").trim()).filter(Boolean))];
   }
 
   function collapseDuplicateSortRows(rows = []) {
