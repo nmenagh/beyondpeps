@@ -7,7 +7,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
     "heroEyebrow": "Research supply lab",
     "heroTitle": "Research supplies, reference tools, and measured routines.",
     "heroBody": "Beyond Peps brings research supplies, clear reference material, calculators, and practical tools into one premium dark-glass workspace.",
-    "blogHeroImageUrl": "assets/hero-liquid-lab.png",
+    "blogHeroImageUrl": "/assets/hero-liquid-lab.png",
     "primaryCta": "Shop research supplies",
     "secondaryCta": "Explore references",
     "disclaimer": "Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions."
@@ -28,7 +28,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "3mL Cartridges for V2 Injection Pens",
       "description": "3mL Cartridges for V2 Injection Pens\n\nEngineered for precision and compatibility, our 3mL cartridges for V2 injection pens provide a reliable solution for controlled liquid handling in research and laboratory environments. Designed to integrate seamlessly with V2 pen systems, these cartridges ensure consistent performance and ease of use across applications.\n\nEach cartridge is constructed from high-quality, medical-grade materials to support durability, clarity, and secure containment. The 3mL capacity offers an optimal balance between volume and control, making it ideal for repeatable, measured dispensing.\n\nKey Features\n3mL capacity for extended usability and fewer replacements\nCompatible with V2 injection pens for seamless integration\nPrecision-molded construction for consistent fit and function\nClear barrel design for easy visual monitoring\nSecure sealing system to help minimize leakage and contamination",
-      "imageUrl": "assets/products/Gray-BG-10-3ml.png",
+      "imageUrl": "/assets/products/Gray-BG-10-3ml.png",
       "tags": [
         "pens"
       ],
@@ -43,7 +43,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "The Deluxe Pen Set Includes:",
       "description": "The Deluxe Pen Set Includes:\n\n5- Disposable Pen Tips\n5- Alcohol Pad Wipe Sets\n2- Reconstitution Syringes\n1- 3mL cartridge\n1- V2 Pen\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
-      "imageUrl": "assets/products/1-2.avif",
+      "imageUrl": "/assets/products/1-2.avif",
       "tags": [
         "pens"
       ],
@@ -58,7 +58,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "30 Pack of V2 Pen Tips",
       "description": "30 Pack of V2 Pen Tips\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
-      "imageUrl": "assets/products/2-2.avif",
+      "imageUrl": "/assets/products/2-2.avif",
       "tags": [
         "pens"
       ],
@@ -73,7 +73,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "The Pen Starter Set Includes:",
       "description": "The Pen Starter Set Includes:\n\n5- Disposable Pen Tips\n5- Alcohol Pad Wipe Sets\n2- Reconstitution Syringes\n1- 3mL cartridge\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
-      "imageUrl": "assets/products/3-1.avif",
+      "imageUrl": "/assets/products/3-1.avif",
       "tags": [
         "pens"
       ],
@@ -88,7 +88,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "3mL Cartridges for V2 Injection Pens",
       "description": "3mL Cartridges for V2 Injection Pens\n\nEngineered for precision and compatibility, our 3mL cartridges for V2 injection pens provide a reliable solution for controlled liquid handling in research and laboratory environments. Designed to integrate seamlessly with V2 pen systems, these cartridges ensure consistent performance and ease of use across applications.\n\nEach cartridge is constructed from high-quality, medical-grade materials to support durability, clarity, and secure containment. The 3mL capacity offers an optimal balance between volume and control, making it ideal for repeatable, measured dispensing.\n\nKey Features\n3mL capacity for extended usability and fewer replacements\nCompatible with V2 injection pens for seamless integration\nPrecision-molded construction for consistent fit and function\nClear barrel design for easy visual monitoring\nSecure sealing system to help minimize leakage and contamination",
-      "imageUrl": "assets/products/4.avif",
+      "imageUrl": "/assets/products/4.avif",
       "tags": [
         "pens"
       ],
@@ -103,7 +103,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "Bag of 10 – Easy Touch 31ga x 5/16″(8mm) x .5ml Syringes",
       "description": "Bag of 10 – Easy Touch 31ga x 5/16″(8mm) x .5ml Syringes\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
-      "imageUrl": "assets/products/Deluxe-Pen-Set.png",
+      "imageUrl": "/assets/products/Deluxe-Pen-Set.png",
       "tags": [
         "syringes"
       ],
@@ -118,7 +118,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "10-Pack of 3ml reconstituting Syringes",
       "description": "10-Pack of 3ml reconstituting Syringes\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
-      "imageUrl": "assets/products/ChatGPT-Image-May-20-2026-10_48_56-PM.png",
+      "imageUrl": "/assets/products/ChatGPT-Image-May-20-2026-10_48_56-PM.png",
       "tags": [
         "syringes"
       ],
@@ -133,7 +133,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "The Syringe Starter Set Includes:",
       "description": "The Syringe Starter Set Includes:\n\n4- Easy Touch Syringes\n5- Alcohol Pad Wipe Sets\n2- Reconstitution Syringes\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
-      "imageUrl": "assets/products/Pen-Starter-Set.png",
+      "imageUrl": "/assets/products/Pen-Starter-Set.png",
       "tags": [
         "syringes"
       ],
@@ -148,7 +148,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "The V2 injection pen is a reusable, metal,, 3mL, pen-style injector designed for precise, daily administration of 1-60 units of research peptides or compound...",
       "description": "The V2 injection pen is a reusable, metal,, 3mL, pen-style injector designed for precise, daily administration of 1-60 units of research peptides or compounds. It features an adjustable dosage dial, a durable metal body, and compatibility with standard ISO 11608-3 cartridges. It is commonly used as a cost-effective alternative to disposable syringes, boasting over 200 uses.\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
-      "imageUrl": "assets/products/3-1.avif",
+      "imageUrl": "/assets/products/3-1.avif",
       "tags": [
         "pens"
       ],
@@ -163,7 +163,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "These are empty peptide storage containers for your research storage.",
       "description": "These are empty peptide storage containers for your research storage.",
-      "imageUrl": "assets/products/1-2.avif",
+      "imageUrl": "/assets/products/1-2.avif",
       "tags": [
         "storage"
       ],
@@ -178,7 +178,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "BP-H Bacteriostatic Water for Injection, USP – 30 mL",
       "description": "BP-H Bacteriostatic Water for Injection, USP – 30 mL\n\nSterile, non-pyrogenic bacteriostatic water supplied in a 30 mL multiple-dose vial with 0.9% benzyl alcohol as a preservative. Ideal for reconstituting lyophilized research compounds in laboratory settings. Compatible with luer-lock and standard stoppers. Store at controlled room temperature; do not freeze.\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
-      "imageUrl": "assets/products/3-1.avif",
+      "imageUrl": "/assets/products/3-1.avif",
       "tags": [
         "syringes"
       ],
@@ -193,7 +193,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "status": "Active",
       "summary": "The Hume Health Body Pod is an advanced, at-home body composition analyzer that uses multi-frequency Bioelectrical Impedance Analysis (BIA) and a retractable...",
       "description": "The Hume Health Body Pod is an advanced, at-home body composition analyzer that uses multi-frequency Bioelectrical Impedance Analysis (BIA) and a retractable handle. It tracks over 45 health metrics—including body fat percentage, muscle mass, visceral fat, and hydration—giving you a comprehensive picture of your fitness progress.\nHow It Works\n8-Point Sensor System: Unlike traditional smart scales that only measure through the feet, the Body Pod features four foot sensors and a retractable four-electrode handle. [1, 2]\nSegmental Analysis: By passing harmless electrical currents through both your upper and lower body, it measures the composition of your arms, legs, and torso separately to pinpoint muscle imbalances and exact areas of fat loss. [1, 2, 3]\nQuick Scans: A full body scan takes roughly 60 seconds.\nHume Health Pod Scale.  Comprehensive, Accurate Full Body Analysis\n\nGet a full picture of your health like never before. With the Hume Pod, you can now easily understand, how your body reacts to food, sleep, stress and other factors so you can start making informed health choices.  The science sounds simple, but actually doing this is difficult without an accurate view of your body's composition. Hume Pod can be your guide, so you never have to guess ever again.\n\nThe ultimate home health hub\n\nUnderstanding your health and fitness at this level has been impossible—until now. The Hume Pod uses 8 frequency sensors to deliver precise weight, full body composition and heart health to advance your weight and health management journey. The advanced sensors embedded in the handle are able to scan your torso, arms, and legs and even heart at an accuracy of 98%!\n\nWhy it matters?\n\nOur Hume Pod delivers full-body insights, measuring muscle mass, body fat, and water composition with superior accuracy. Unlike standard smart scales that only measure half the body and uses estimations, the Hume Pod provides reliable data that empowers you to track your progress and achieve your fitness goals with confidence.\n\nTake the guesswork out of your health. The Hume Pod is elegantly designed and easy to use. No matter where you are in your health journey, this health station will fit seamlessly into your life.\n\nKey Health Metrics Tracked\nWeight & Composition: Total body weight, skeletal muscle mass, and body fat percentage.\nFat Breakdown: Visceral fat (harmful fat around organs) and subcutaneous fat.\nHydration: Total body water percentage to monitor cellular health and recovery.\nMetabolism: Basal Metabolic Rate (BMR) and estimated metabolic age.\nBone Density: Estimated bone mass.\n\nApp & Connectivity\nAI-Powered Insights: The system pairs with the Hume Health App via Bluetooth to transform raw data into visual dashboards, weekly health reports, and personalized coaching.\nPlatform Sync: It seamlessly connects with third-party apps like Apple Health, Google Fit, Fitbit, and Garmin.\nMulti-User: The device automatically recognizes different users in your household and supports up to 24–30 distinct profiles.\n\nDevice Specs & Design\nBuild: Sleek, modern tempered glass platform capable of supporting up to 400 lbs.\nBattery: Powered by a rechargeable lithium-ion battery that lasts up to a year on a single charge.",
-      "imageUrl": "assets/products/ChatGPT-Image-May-20-2026-10_55_21-PM.png",
+      "imageUrl": "/assets/products/ChatGPT-Image-May-20-2026-10_55_21-PM.png",
       "tags": [
         "measurement"
       ],
@@ -231,16 +231,16 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "title": "Building a Better Peptide Supply Station",
       "date": "2026-07-05",
       "summary": "A practical look at labels, cold storage, staging trays, and the small habits that reduce mistakes.",
-      "imageUrl": "assets/hero-liquid-lab.png",
-      "heroImageUrl": "assets/hero-liquid-lab.png",
+      "imageUrl": "/assets/hero-liquid-lab.png",
+      "heroImageUrl": "/assets/hero-liquid-lab.png",
       "status": "Draft"
     },
     {
       "title": "Why Calculators Need Context",
       "date": "2026-07-05",
       "summary": "The math is only useful when paired with clear units, documentation, and professional guidance.",
-      "imageUrl": "assets/hero-liquid-lab.png",
-      "heroImageUrl": "assets/hero-liquid-lab.png",
+      "imageUrl": "/assets/hero-liquid-lab.png",
+      "heroImageUrl": "/assets/hero-liquid-lab.png",
       "status": "Draft"
     }
   ]
