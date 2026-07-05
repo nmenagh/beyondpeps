@@ -1610,7 +1610,7 @@ legend {
   }
 
   .page-hero {
-    padding-top: clamp(8.5rem, 28vw, 11rem);
+    padding-top: clamp(6.5rem, 21vw, 8rem);
   }
 
   .hero {
@@ -1619,7 +1619,7 @@ legend {
   }
 
   .hero-copy {
-    margin-top: 7rem;
+    margin-top: 5.5rem;
   }
 
   h1 {
@@ -1648,6 +1648,10 @@ legend {
   .cart-item,
   .address-grid {
     grid-template-columns: 1fr;
+  }
+
+  .product-detail {
+    padding-top: clamp(6.25rem, 20vw, 7.75rem);
   }
 
   .cart-item img {
@@ -1729,11 +1733,11 @@ legend {
   }
 
   .page-hero {
-    padding-top: clamp(8.75rem, 32vw, 11.5rem);
+    padding-top: clamp(6.75rem, 24vw, 8.25rem);
   }
 
   .hero-copy {
-    margin-top: 7.5rem;
+    margin-top: 5.75rem;
   }
 }
 
