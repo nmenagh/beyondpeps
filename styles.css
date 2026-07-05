@@ -1335,7 +1335,7 @@ legend {
 .glp-dose-head,
 .glp-dose-item {
   display: grid;
-  grid-template-columns: 74px 1fr 38px;
+  grid-template-columns: 74px 1fr 44px;
   gap: 0.55rem;
   align-items: center;
   padding: 0.65rem;
@@ -1360,8 +1360,8 @@ legend {
 }
 
 .glp-remove {
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border: 1px solid rgba(255, 115, 115, 0.38);
   border-radius: var(--radius);
   background: rgba(255, 115, 115, 0.09);
@@ -1409,26 +1409,42 @@ legend {
 @media (max-width: 860px) {
   .site-header {
     position: absolute;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
     border-radius: 18px;
-    gap: 0.7rem;
+    gap: 0.65rem;
+  }
+
+  .brand {
+    justify-self: start;
+    max-width: 100%;
   }
 
   .nav-links {
-    grid-column: 1 / -1;
-    justify-self: start;
+    grid-column: 1;
+    justify-self: stretch;
     width: 100%;
-    overflow-x: auto;
-    padding-bottom: 0.1rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    overflow: visible;
+  }
+
+  .nav-links a {
+    width: 100%;
+    justify-content: center;
+    min-width: 0;
+    padding: 0 0.55rem;
+    background: rgba(255, 255, 255, 0.045);
+    white-space: nowrap;
   }
 
   .account-pill {
-    grid-column: 1 / -1;
+    grid-column: 1;
     width: 100%;
   }
 
   .page-hero {
-    padding-top: clamp(13.5rem, 45vw, 15.5rem);
+    padding-top: clamp(18rem, 66vw, 22rem);
   }
 
   .hero {
@@ -1437,7 +1453,7 @@ legend {
   }
 
   .hero-copy {
-    margin-top: 7rem;
+    margin-top: 13rem;
   }
 
   h1 {
@@ -1514,6 +1530,44 @@ legend {
 
   .site-footer {
     display: block;
+  }
+}
+
+@media (max-width: 420px) {
+  .site-header {
+    inset: 16px 14px auto;
+    padding: 0.52rem;
+  }
+
+  .brand {
+    padding-right: 0.5rem;
+  }
+
+  .brand-mark {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .nav-links {
+    gap: 0.38rem;
+  }
+
+  .nav-links a {
+    min-height: 2.25rem;
+    padding: 0 0.45rem;
+    font-size: 0.84rem;
+  }
+
+  .account-pill {
+    min-height: 2.35rem;
+  }
+
+  .page-hero {
+    padding-top: clamp(19.5rem, 78vw, 23.5rem);
+  }
+
+  .hero-copy {
+    margin-top: 14rem;
   }
 }
 
