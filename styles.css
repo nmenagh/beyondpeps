@@ -1411,6 +1411,7 @@ legend {
     position: absolute;
     grid-template-columns: 1fr auto;
     border-radius: 18px;
+    gap: 0.7rem;
   }
 
   .nav-links {
@@ -1419,6 +1420,15 @@ legend {
     width: 100%;
     overflow-x: auto;
     padding-bottom: 0.1rem;
+  }
+
+  .account-pill {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .page-hero {
+    padding-top: clamp(13.5rem, 45vw, 15.5rem);
   }
 
   .hero {
