@@ -135,6 +135,18 @@
     };
   }
 
+  function mediaAssetFromDb(asset) {
+    return {
+      id: asset.id,
+      name: asset.name || fileNameFromUrl(asset.url || asset.path || ""),
+      url: asset.url || "",
+      path: asset.path || "",
+      folder: asset.folder || "uploads",
+      mimeType: asset.mime_type || "",
+      sizeBytes: asset.size_bytes || 0
+    };
+  }
+
   function postToDb(post) {
     const status = uiStatusToDb(post.status || "draft");
     return {
@@ -163,6 +175,11 @@
       ...(Array.isArray(images) ? images : String(images || "").split(/[\n,]+/))
     ];
     return [...new Set(list.map((url) => String(url || "").trim()).filter(Boolean))];
+  }
+
+  function fileNameFromUrl(url = "") {
+    const clean = String(url).split("?")[0].split("#")[0];
+    return decodeURIComponent(clean.split("/").pop() || "Media asset");
   }
 
   function collapseDuplicateSortRows(rows = []) {
@@ -257,6 +274,30 @@
     return true;
   }
 
+  async function loadMediaAssets() {
+    if (!isConfigured()) return [];
+    const assets = await request("/rest/v1/media_assets?select=*&order=created_at.desc");
+    return assets.map(mediaAssetFromDb);
+  }
+
+  async function recordMediaAsset(asset) {
+    if (!isConfigured()) return null;
+    const body = {
+      name: asset.name || fileNameFromUrl(asset.url || asset.path || ""),
+      url: asset.url,
+      path: asset.path || null,
+      folder: asset.folder || "uploads",
+      mime_type: asset.mimeType || null,
+      size_bytes: asset.sizeBytes || null
+    };
+    const rows = await request("/rest/v1/media_assets?on_conflict=url", {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=representation",
+      body: [body]
+    });
+    return rows?.[0] ? mediaAssetFromDb(rows[0]) : null;
+  }
+
   async function reserveCart(cartId, items = []) {
     if (!isConfigured()) return null;
     return request("/rest/v1/rpc/beyond_peps_reserve_cart", {
@@ -314,7 +355,16 @@
       throw new Error(detail || `Upload failed: ${response.status}`);
     }
 
-    return `${url.replace(/\/$/, "")}/storage/v1/object/public/beyond-peps-media/${path}`;
+    const publicUrl = `${url.replace(/\/$/, "")}/storage/v1/object/public/beyond-peps-media/${path}`;
+    await recordMediaAsset({
+      name: file.name,
+      url: publicUrl,
+      path,
+      folder,
+      mimeType: file.type || "",
+      sizeBytes: file.size || 0
+    }).catch((error) => console.warn("Media asset record failed.", error));
+    return publicUrl;
   }
 
   async function signIn(email, password) {
@@ -475,6 +525,8 @@
     loadProfile,
     loadOrders,
     loadContent,
+    loadMediaAssets,
+    recordMediaAsset,
     reserveCart,
     saveContent,
     validateCheckout,

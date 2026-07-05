@@ -305,6 +305,79 @@ button {
   color: var(--muted);
 }
 
+.media-dropzone {
+  display: grid;
+  gap: 0.55rem;
+  justify-items: center;
+  margin-bottom: 1rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px dashed rgba(101, 255, 200, 0.5);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(66, 228, 255, 0.15), transparent 16rem),
+    rgba(1, 7, 11, 0.44);
+  color: var(--muted);
+  text-align: center;
+}
+
+.media-dropzone strong {
+  color: #ffffff;
+  font-size: 1.35rem;
+}
+
+.media-dropzone input {
+  max-width: 360px;
+  padding: 0.8rem;
+}
+
+.media-dropzone.is-dragging,
+.media-dropzone.is-uploading {
+  border-color: var(--mint);
+  background: rgba(101, 255, 200, 0.08);
+}
+
+.media-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.85rem;
+}
+
+.media-card,
+.empty-media {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-strong);
+}
+
+.media-card {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+}
+
+.media-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.media-card strong {
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.media-card input {
+  min-height: 2.35rem;
+  font-size: 0.76rem;
+}
+
+.empty-media {
+  padding: 1.2rem;
+  color: var(--muted);
+}
+
 .gallery-field {
   gap: 0.8rem;
 }

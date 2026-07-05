@@ -2,6 +2,7 @@ const STORAGE_KEY = "beyondPepsContent";
 
 let content = null;
 let adminAllowed = false;
+let mediaAssets = [];
 
 const siteSchema = [
   ["name", "Site name"],
@@ -75,6 +76,19 @@ async function saveContent() {
   updateJsonEditor();
 }
 
+async function loadMediaAssets() {
+  try {
+    mediaAssets = await window.BeyondPepsSupabase?.loadMediaAssets?.() || [];
+  } catch (error) {
+    console.warn("Media library unavailable, using product images.", error);
+    mediaAssets = [];
+  }
+
+  if (!mediaAssets.length && content) {
+    mediaAssets = mediaAssetsFromContent(content);
+  }
+}
+
 function cloneDefaultContent() {
   return JSON.parse(JSON.stringify(window.BEYOND_PEPS_DEFAULT_CONTENT || {
     site: {},
@@ -137,6 +151,30 @@ function normalizeContent(data) {
     body: reference.body || reference.summary || ""
   }));
   return data;
+}
+
+function mediaAssetsFromContent(data) {
+  const urls = new Set();
+  (data.products || []).forEach((product) => {
+    if (product.imageUrl) urls.add(product.imageUrl);
+    (product.galleryImages || []).forEach((url) => urls.add(url));
+  });
+  if (data.site?.blogHeroImageUrl) urls.add(data.site.blogHeroImageUrl);
+  (data.posts || []).forEach((post) => {
+    if (post.imageUrl) urls.add(post.imageUrl);
+    if (post.heroImageUrl) urls.add(post.heroImageUrl);
+  });
+  return [...urls].map((url) => ({
+    id: url,
+    name: fileNameFromUrl(url),
+    url,
+    folder: "existing"
+  }));
+}
+
+function fileNameFromUrl(url = "") {
+  const clean = String(url).split("?")[0].split("#")[0];
+  return decodeURIComponent(clean.split("/").pop() || "Media asset");
 }
 
 function toast(message) {
@@ -265,6 +303,15 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       preview.innerHTML = imagePreviewMarkup(input.value);
     });
 
+    const select = mediaSelect(value, "Choose from media library");
+    select.addEventListener("change", () => {
+      if (!select.value) return;
+      input.value = select.value;
+      onInput(select.value);
+      preview.innerHTML = imagePreviewMarkup(select.value);
+      updateJsonEditor();
+    });
+
     const upload = document.createElement("input");
     upload.type = "file";
     upload.accept = "image/*";
@@ -287,7 +334,7 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       }
     });
 
-    wrap.append(preview, input, upload);
+    wrap.append(preview, select, input, upload);
     return wrap;
   }
 
@@ -323,6 +370,14 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
         sync();
       });
 
+      const select = mediaSelect(url, "Choose gallery image");
+      select.addEventListener("change", () => {
+        if (!select.value) return;
+        input.value = select.value;
+        preview.innerHTML = imagePreviewMarkup(select.value);
+        sync();
+      });
+
       const upload = document.createElement("input");
       upload.type = "file";
       upload.accept = "image/*";
@@ -353,7 +408,7 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
         sync();
       });
 
-      row.append(preview, input, upload, remove);
+      row.append(preview, select, input, upload, remove);
       list.append(row);
     };
 
@@ -395,6 +450,15 @@ function imagePreviewMarkup(value = "") {
 function normalizeGalleryValue(value = []) {
   if (Array.isArray(value)) return value.map((url) => String(url || "").trim()).filter(Boolean);
   return String(value || "").split(/[\n,]+/).map((url) => url.trim()).filter(Boolean);
+}
+
+function mediaSelect(value = "", placeholder = "Choose image") {
+  const select = document.createElement("select");
+  select.innerHTML = `
+    <option value="">${escapeAttribute(placeholder)}</option>
+    ${mediaAssets.map((asset) => `<option value="${escapeAttribute(asset.url)}"${asset.url === value ? " selected" : ""}>${escapeAttribute(asset.name || fileNameFromUrl(asset.url))}</option>`).join("")}
+  `;
+  return select;
 }
 
 function escapeAttribute(value = "") {
@@ -490,6 +554,7 @@ function renderAll() {
   renderSummary();
   renderSiteFields();
   renderCollections();
+  renderMediaLibrary();
   updateJsonEditor();
 }
 
@@ -511,9 +576,28 @@ function renderSummary() {
   if (!root) return;
   root.innerHTML = `
     <article><strong>${content.products.length}</strong><span>Products</span></article>
+    <article><strong>${mediaAssets.length}</strong><span>Media</span></article>
     <article><strong>${content.references.length}</strong><span>References</span></article>
     <article><strong>${content.posts.length}</strong><span>Blog posts</span></article>
   `;
+}
+
+function renderMediaLibrary() {
+  const root = document.querySelector("#mediaLibrary");
+  if (!root) return;
+
+  if (!mediaAssets.length) {
+    root.innerHTML = `<div class="empty-media">No media uploaded yet.</div>`;
+    return;
+  }
+
+  root.innerHTML = mediaAssets.map((asset) => `
+    <article class="media-card">
+      <img src="${escapeAttribute(resolveAdminImageUrl(asset.url))}" alt="">
+      <strong>${escapeAttribute(asset.name || fileNameFromUrl(asset.url))}</strong>
+      <input type="text" value="${escapeAttribute(asset.url)}" readonly>
+    </article>
+  `).join("");
 }
 
 function setupTabs() {
@@ -556,6 +640,62 @@ function setupActions() {
     } catch (error) {
       toast(`JSON error: ${error.message}`);
     }
+  });
+
+  setupMediaUpload();
+}
+
+function setupMediaUpload() {
+  const dropzone = document.querySelector("#mediaDropzone");
+  const input = document.querySelector("#mediaUploadInput");
+  if (!dropzone || !input) return;
+
+  const uploadFiles = async (files) => {
+    const images = [...files].filter((file) => file.type.startsWith("image/"));
+    if (!images.length) {
+      toast("Drop image files to upload.");
+      return;
+    }
+
+    dropzone.classList.add("is-uploading");
+    dropzone.querySelector("span").textContent = `Uploading ${images.length} image${images.length === 1 ? "" : "s"}...`;
+
+    let uploaded = 0;
+    for (const file of images) {
+      try {
+        const url = await window.BeyondPepsSupabase.uploadMedia(file, "products");
+        const asset = {
+          id: url,
+          name: file.name,
+          url,
+          folder: "products",
+          mimeType: file.type,
+          sizeBytes: file.size
+        };
+        mediaAssets = [asset, ...mediaAssets.filter((item) => item.url !== url)];
+        uploaded += 1;
+      } catch (error) {
+        toast(`Upload failed: ${error.message}`);
+      }
+    }
+
+    dropzone.classList.remove("is-uploading", "is-dragging");
+    dropzone.querySelector("span").textContent = "or choose multiple files to upload them into the reusable media library.";
+    input.value = "";
+    renderAll();
+    toast(`${uploaded} image${uploaded === 1 ? "" : "s"} uploaded.`);
+  };
+
+  input.addEventListener("change", () => uploadFiles(input.files || []));
+  dropzone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    dropzone.classList.add("is-dragging");
+  });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("is-dragging"));
+  dropzone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    dropzone.classList.remove("is-dragging");
+    uploadFiles(event.dataTransfer?.files || []);
   });
 }
 
@@ -601,6 +741,7 @@ requireAdmin().then(async (allowed) => {
   if (!allowed) return;
   const data = await loadContent();
   content = normalizeContent(data);
+  await loadMediaAssets();
   setupTabs();
   setupActions();
   renderAll();

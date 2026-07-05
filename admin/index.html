@@ -39,6 +39,7 @@
         </div>
         <button class="tab is-active" data-panel="sitePanel" type="button">Site copy</button>
         <button class="tab" data-panel="productsPanel" type="button">Products</button>
+        <button class="tab" data-panel="mediaPanel" type="button">Media</button>
         <button class="tab" data-panel="referencesPanel" type="button">References</button>
         <button class="tab" data-panel="postsPanel" type="button">Blog</button>
         <button class="tab" data-panel="exportPanel" type="button">Import/export</button>
@@ -60,6 +61,21 @@
             <button class="button ghost" data-add="products" type="button">Add product</button>
           </div>
           <div class="editor-list" id="productsEditor"></div>
+        </div>
+
+        <div class="admin-panel" id="mediaPanel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Assets</p>
+              <h1>Media library</h1>
+            </div>
+          </div>
+          <div class="media-dropzone" id="mediaDropzone">
+            <strong>Drop images here</strong>
+            <span>or choose multiple files to upload them into the reusable media library.</span>
+            <input id="mediaUploadInput" type="file" accept="image/*" multiple>
+          </div>
+          <div class="media-library-grid" id="mediaLibrary"></div>
         </div>
 
         <div class="admin-panel" id="referencesPanel">
