@@ -71,7 +71,8 @@
       description: product.description || product.summary || "",
       imageUrl: product.image_url || "",
       tags: product.tags || [],
-      featured: Boolean(product.featured)
+      featured: Boolean(product.featured),
+      stockLevel: product.inventory_count ?? null
     };
   }
 
@@ -90,6 +91,7 @@
       status: uiStatusToDb(product.status || "draft"),
       tags: Array.isArray(product.tags) ? product.tags : [],
       featured: Boolean(product.featured),
+      inventory_count: Number.isFinite(Number(product.stockLevel)) ? Math.max(0, Math.floor(Number(product.stockLevel))) : null,
       sort_order: index * 10
     };
   }
@@ -178,6 +180,17 @@
     });
   }
 
+  async function deleteMissingProducts(slugs = []) {
+    const filter = slugs.length
+      ? `slug=not.in.(${postgrestQuotedList(slugs)})`
+      : "slug=not.is.null";
+
+    await request(`/rest/v1/products?${filter}`, {
+      method: "DELETE",
+      prefer: "return=minimal"
+    });
+  }
+
   async function loadContent(defaultContent, options = {}) {
     if (!isConfigured()) return null;
 
@@ -209,11 +222,13 @@
       body: [{ key: "home", value: content.site }]
     });
 
+    const productRows = content.products.map(productToDb);
     await request("/rest/v1/products?on_conflict=slug", {
       method: "POST",
       prefer: "resolution=merge-duplicates,return=representation",
-      body: content.products.map(productToDb)
+      body: productRows
     });
+    await deleteMissingProducts(productRows.map((product) => product.slug));
 
     const referenceRows = content.references.map(referenceToDb);
     await request("/rest/v1/references?on_conflict=slug", {
@@ -230,6 +245,34 @@
     });
 
     return true;
+  }
+
+  async function reserveCart(cartId, items = []) {
+    if (!isConfigured()) return null;
+    return request("/rest/v1/rpc/beyond_peps_reserve_cart", {
+      method: "POST",
+      body: {
+        p_cart_id: cartId,
+        p_items: items.map((item) => ({
+          id: item.id,
+          quantity: Math.max(0, Math.floor(Number(item.quantity || 0)))
+        })).filter((item) => item.id && item.quantity > 0)
+      }
+    });
+  }
+
+  async function validateCheckout(cartId, items = []) {
+    if (!isConfigured()) return { ok: true, unavailable: [] };
+    return request("/rest/v1/rpc/beyond_peps_validate_checkout", {
+      method: "POST",
+      body: {
+        p_cart_id: cartId,
+        p_items: items.map((item) => ({
+          id: item.id,
+          quantity: Math.max(0, Math.floor(Number(item.quantity || 0)))
+        })).filter((item) => item.id && item.quantity > 0)
+      }
+    });
   }
 
   async function uploadMedia(file, folder = "uploads") {
@@ -422,7 +465,9 @@
     loadProfile,
     loadOrders,
     loadContent,
+    reserveCart,
     saveContent,
+    validateCheckout,
     saveProfile,
     session,
     signIn,

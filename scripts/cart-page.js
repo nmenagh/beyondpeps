@@ -17,7 +17,20 @@
     })[char]);
   }
 
-  function renderCart() {
+  function holdText(item) {
+    if (!item.holdExpiresAt) return "";
+    const expiresAt = Date.parse(item.holdExpiresAt);
+    if (!Number.isFinite(expiresAt)) return "";
+    const minutes = Math.max(0, Math.ceil((expiresAt - Date.now()) / 60000));
+    return minutes ? `Reserved for ${minutes} more minute${minutes === 1 ? "" : "s"}.` : "Reservation expired.";
+  }
+
+  function inventoryText(item) {
+    if (!Number.isFinite(Number(item.stockLevel))) return "";
+    return `${Number(item.stockLevel)} in stock before cart holds.`;
+  }
+
+  async function renderCart(message = "") {
     const list = document.querySelector("#cartItems");
     const summary = document.querySelector("#cartSummary");
     if (!list || !summary) return;
@@ -35,6 +48,8 @@
         <div>
           <h3>${escapeHtml(item.name)}</h3>
           <p>${money(item.price)} each</p>
+          ${inventoryText(item) ? `<p class="cart-stock">${escapeHtml(inventoryText(item))}</p>` : ""}
+          ${holdText(item) ? `<p class="cart-hold">${escapeHtml(holdText(item))}</p>` : ""}
         </div>
         <label>
           Qty
@@ -48,24 +63,40 @@
     summary.innerHTML = `
       <div class="glass-panel cart-summary-card">
         <div><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
-        <p>Payment options will connect here later. Your cart is saved locally in this browser for now.</p>
-        <button class="button primary" type="button" disabled>Checkout coming soon</button>
+        <p>Items added to cart are reserved for ${window.BeyondPepsCart.holdMinutes} minutes, then released if checkout is not completed.</p>
+        ${message ? `<p class="cart-message">${escapeHtml(message)}</p>` : ""}
+        <button class="button primary" id="checkoutCheck" type="button">Check inventory & checkout</button>
         <button class="button ghost" id="clearCart" type="button">Clear cart</button>
       </div>
     `;
 
     document.querySelectorAll(".cart-item").forEach((row) => {
-      row.querySelector(".cart-qty").addEventListener("input", (event) => {
+      row.querySelector(".cart-qty").addEventListener("change", async (event) => {
         window.BeyondPepsCart.updateItem(row.dataset.cartItem, Math.max(0, Number.parseInt(event.target.value, 10) || 0));
-        renderCart();
+        await renderCart();
       });
     });
 
-    document.querySelector("#clearCart").addEventListener("click", () => {
+    document.querySelector("#checkoutCheck").addEventListener("click", async () => {
+      const button = document.querySelector("#checkoutCheck");
+      button.disabled = true;
+      button.textContent = "Checking inventory...";
+      const result = await window.BeyondPepsCart.validateCheckout();
+      if (result.ok) {
+        await renderCart("Inventory check passed. Payment connection is the next step.");
+      } else {
+        const unavailable = (result.unavailable || []).map((item) => `${item.id}: ${item.available ?? 0} available`).join("; ");
+        await renderCart(result.message || `Some items are no longer available. ${unavailable}`);
+      }
+    });
+
+    document.querySelector("#clearCart").addEventListener("click", async () => {
       window.BeyondPepsCart.clearCart();
-      renderCart();
+      await renderCart();
     });
   }
 
-  document.addEventListener("DOMContentLoaded", renderCart);
+  document.addEventListener("DOMContentLoaded", () => {
+    window.BeyondPepsCart.reserveCart().then(() => renderCart());
+  });
 })();

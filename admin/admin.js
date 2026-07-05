@@ -358,6 +358,7 @@ function renderCollections() {
     ["name", "Name"],
     ["category", "Category"],
     ["price", "Price", "number"],
+    ["stockLevel", "Stock level", "number"],
     ["status", "Status"],
     ["imageUrl", "Product image", "image", true, "products"],
     ["summary", "Card summary", "textarea", true],
@@ -440,7 +441,7 @@ function setupActions() {
     button.addEventListener("click", () => {
       const collection = button.dataset.add;
       const templates = {
-        products: { id: `product-${Date.now()}`, name: "New product", category: "Sterile Handling", price: 0, status: "Draft", imageUrl: "", summary: "", description: "" },
+        products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, status: "Draft", imageUrl: "", summary: "", description: "" },
         references: { slug: `reference-${Date.now()}`, title: "New reference", type: "Guide", status: "Published", summary: "", body: "" },
         posts: { title: "New post", date: new Date().toISOString().slice(0, 10), status: "Draft", imageUrl: "", heroImageUrl: "", summary: "" }
       };

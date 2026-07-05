@@ -505,6 +505,32 @@ h3 {
   font-weight: 780;
 }
 
+.stock-chip,
+.stock-note,
+.cart-hold,
+.cart-stock,
+.cart-message,
+.cart-feedback {
+  color: var(--mint);
+  font-size: 0.84rem;
+  font-weight: 760;
+}
+
+.stock-chip {
+  width: fit-content;
+  margin-top: 0.2rem;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid rgba(101, 255, 200, 0.3);
+  border-radius: 999px;
+  background: rgba(101, 255, 200, 0.065);
+}
+
+.stock-chip.is-empty,
+.stock-note.is-empty {
+  border-color: rgba(255, 115, 115, 0.38);
+  color: #ffb9b9;
+}
+
 .status {
   width: fit-content;
   padding: 0.25rem 0.55rem;
@@ -712,6 +738,10 @@ output {
   font-size: 1.16rem;
 }
 
+.stock-note {
+  margin-bottom: 0;
+}
+
 .product-description {
   margin: 1.25rem 0;
   color: var(--muted);
@@ -728,6 +758,12 @@ output {
   align-items: end;
   padding: 1rem;
   border-radius: var(--radius);
+}
+
+.cart-feedback {
+  grid-column: 1 / -1;
+  min-height: 1.2rem;
+  margin-bottom: 0;
 }
 
 .cart-layout {
@@ -767,6 +803,12 @@ output {
   color: var(--muted);
 }
 
+.cart-item .cart-hold,
+.cart-item .cart-stock {
+  color: var(--mint);
+  font-size: 0.8rem;
+}
+
 .cart-summary-card {
   display: grid;
   gap: 1rem;
@@ -788,6 +830,13 @@ output {
 .cart-summary-card strong {
   color: #ffffff;
   font-size: 1.6rem;
+}
+
+.cart-message {
+  padding: 0.75rem;
+  border: 1px solid rgba(101, 255, 200, 0.28);
+  border-radius: var(--radius);
+  background: rgba(101, 255, 200, 0.065);
 }
 
 .empty-state {

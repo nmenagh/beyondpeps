@@ -116,6 +116,7 @@ function isPublished(item) {
 }
 
 function renderProductCard(product) {
+  const stockLevel = Number.isFinite(Number(product.stockLevel)) ? Math.max(0, Math.floor(Number(product.stockLevel))) : null;
   return `
     <a class="product-card product-card-link" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHtml(product.name || "product")}">
       ${imageMarkup(product.imageUrl, product.name || "Product image", "card-image product-image")}
@@ -125,9 +126,17 @@ function renderProductCard(product) {
       </div>
       <h3>${escapeHtml(product.name || "Untitled product")}</h3>
       <p>${escapeHtml(product.summary || "")}</p>
+      <span class="stock-chip ${stockLevel === 0 ? "is-empty" : ""}">${escapeHtml(stockLabel(stockLevel))}</span>
       <div class="price">${money(product.price)}</div>
     </a>
   `;
+}
+
+function stockLabel(stockLevel) {
+  if (stockLevel === null) return "Stock checked at checkout";
+  if (stockLevel === 0) return "Out of stock";
+  if (stockLevel <= 5) return `Only ${stockLevel} left`;
+  return `${stockLevel} in stock`;
 }
 
 function renderPostCard(post, wide = false) {
