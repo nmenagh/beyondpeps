@@ -470,6 +470,19 @@ h3 {
   filter: saturate(1.1) contrast(1.04);
 }
 
+.product-image {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(66, 228, 255, 0.12), transparent 12rem),
+    rgba(1, 7, 11, 0.42);
+}
+
+.product-image img {
+  padding: 0.65rem;
+  object-fit: contain;
+}
+
 .wide-card .card-image img {
   height: 18rem;
 }
@@ -720,6 +733,9 @@ output {
   overflow: hidden;
   border-radius: var(--radius);
   min-height: min(620px, 74vh);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(66, 228, 255, 0.12), transparent 20rem),
+    rgba(1, 7, 11, 0.42);
 }
 
 .product-gallery-column {
@@ -731,7 +747,8 @@ output {
   width: 100%;
   height: 100%;
   min-height: min(620px, 74vh);
-  object-fit: cover;
+  padding: clamp(0.75rem, 2vw, 1.35rem);
+  object-fit: contain;
 }
 
 .product-thumbnail-strip {
@@ -762,7 +779,8 @@ output {
 .product-thumbnail img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  padding: 0.25rem;
+  object-fit: contain;
   filter: saturate(1.08) contrast(1.02);
 }
 
@@ -834,7 +852,9 @@ output {
   width: 96px;
   height: 82px;
   border-radius: var(--radius);
-  object-fit: cover;
+  padding: 0.25rem;
+  object-fit: contain;
+  background: rgba(1, 7, 11, 0.42);
 }
 
 .cart-item h3 {
