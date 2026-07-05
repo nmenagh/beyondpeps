@@ -254,15 +254,15 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
     wrap.classList.add("image-field");
     const preview = document.createElement("div");
     preview.className = "image-preview";
-    preview.innerHTML = value ? `<img src="${escapeAttribute(value)}" alt="">` : `<span>No image selected</span>`;
+    preview.innerHTML = imagePreviewMarkup(value);
 
     const input = document.createElement("input");
-    input.type = "url";
+    input.type = "text";
     input.value = value ?? "";
     input.placeholder = "Image URL or upload below";
     input.addEventListener("input", () => {
       onInput(input.value);
-      preview.innerHTML = input.value ? `<img src="${escapeAttribute(input.value)}" alt="">` : `<span>No image selected</span>`;
+      preview.innerHTML = imagePreviewMarkup(input.value);
     });
 
     const upload = document.createElement("input");
@@ -276,11 +276,11 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
         const url = await window.BeyondPepsSupabase.uploadMedia(file, uploadFolder);
         input.value = url;
         onInput(url);
-        preview.innerHTML = `<img src="${escapeAttribute(url)}" alt="">`;
+        preview.innerHTML = imagePreviewMarkup(url);
         updateJsonEditor();
         toast("Image uploaded. Save changes to persist the URL.");
       } catch (error) {
-        preview.innerHTML = value ? `<img src="${escapeAttribute(value)}" alt="">` : `<span>No image selected</span>`;
+        preview.innerHTML = imagePreviewMarkup(value);
         toast(`Upload failed: ${error.message}`);
       } finally {
         upload.value = "";
@@ -299,6 +299,18 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
   });
   wrap.append(control);
   return wrap;
+}
+
+function resolveAdminImageUrl(value = "") {
+  const url = String(value || "").trim();
+  if (!url) return "";
+  if (/^(https?:|data:|blob:|\/)/i.test(url)) return url;
+  return `../${url.replace(/^\.?\//, "")}`;
+}
+
+function imagePreviewMarkup(value = "") {
+  const url = resolveAdminImageUrl(value);
+  return url ? `<img src="${escapeAttribute(url)}" alt="">` : `<span>No image selected</span>`;
 }
 
 function escapeAttribute(value = "") {
