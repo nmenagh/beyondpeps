@@ -221,7 +221,7 @@ img {
   min-height: 100vh;
   display: grid;
   align-items: center;
-  padding: 7rem clamp(1rem, 4vw, 4rem) 5rem;
+  padding: 7rem max(1rem, calc((100% - 1180px) / 2)) 5rem;
   overflow: clip;
 }
 
