@@ -156,7 +156,10 @@ function renderPostCard(post, wide = false) {
 function renderProducts(products = []) {
   const grid = document.querySelector("#productGrid");
   if (!grid) return;
-  grid.innerHTML = products.map(renderProductCard).join("");
+  const list = grid.dataset.products === "featured"
+    ? products.filter((product) => product.featured).slice(0, 3)
+    : products;
+  renderProductsInto(grid, list, grid.dataset.products === "featured" ? "No featured products selected yet." : "No products available yet.");
 }
 
 function renderFeaturedProducts(products = []) {
@@ -165,8 +168,10 @@ function renderFeaturedProducts(products = []) {
   renderProductsInto(grid, products.filter((product) => product.featured).slice(0, 3));
 }
 
-function renderProductsInto(grid, products = []) {
-  grid.innerHTML = products.map(renderProductCard).join("");
+function renderProductsInto(grid, products = [], emptyMessage = "No products available yet.") {
+  grid.innerHTML = products.length
+    ? products.map(renderProductCard).join("")
+    : `<p class="empty-state">${escapeHtml(emptyMessage)}</p>`;
 }
 
 function renderReferences(references = []) {

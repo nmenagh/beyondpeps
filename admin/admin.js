@@ -1,4 +1,5 @@
 const STORAGE_KEY = "beyondPepsContent";
+const MAX_FEATURED_PRODUCTS = 3;
 
 let content = null;
 let adminAllowed = false;
@@ -60,6 +61,8 @@ async function saveContent() {
     toast("Admin access required.");
     return;
   }
+
+  if (!validateFeaturedLimit()) return;
 
   try {
     if (window.BeyondPepsSupabase?.isConfigured()) {
@@ -142,6 +145,10 @@ function slugify(value) {
 }
 
 function normalizeContent(data) {
+  data.products = (data.products || []).map((product) => ({
+    ...product,
+    featured: Boolean(product.featured)
+  }));
   data.references = (data.references || []).map((reference, index) => ({
     slug: reference.slug || reference.id || slugify(reference.title || `reference-${index + 1}`),
     title: reference.title || "Untitled reference",
@@ -151,6 +158,17 @@ function normalizeContent(data) {
     body: reference.body || reference.summary || ""
   }));
   return data;
+}
+
+function featuredProductCount(excludeItem = null) {
+  return (content?.products || []).filter((product) => product !== excludeItem && product.featured).length;
+}
+
+function validateFeaturedLimit() {
+  const count = featuredProductCount();
+  if (count <= MAX_FEATURED_PRODUCTS) return true;
+  toast(`Only ${MAX_FEATURED_PRODUCTS} products can be featured at a time. Uncheck ${count - MAX_FEATURED_PRODUCTS} before saving.`);
+  return false;
 }
 
 function mediaAssetsFromContent(data) {
@@ -287,6 +305,26 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
   const wrap = document.createElement("label");
   if (wide || type === "textarea" || type === "image" || type === "gallery") wrap.classList.add("field-wide");
   wrap.textContent = label;
+
+  if (type === "checkbox") {
+    wrap.classList.add("checkbox-field");
+    wrap.textContent = "";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = Boolean(value);
+    input.addEventListener("change", () => {
+      const accepted = onInput(input.checked);
+      if (accepted === false) input.checked = !input.checked;
+      updateJsonEditor();
+    });
+
+    const text = document.createElement("span");
+    text.textContent = label;
+
+    wrap.append(input, text);
+    return wrap;
+  }
 
   if (type === "image") {
     wrap.classList.add("image-field");
@@ -504,8 +542,13 @@ function renderCollection(collection, rootSelector, schema) {
 
     schema.forEach(([key, label, type, wide, uploadFolder]) => {
       card.append(field(label, item[key], (value) => {
+        if (collection === "products" && key === "featured" && value && featuredProductCount(item) >= MAX_FEATURED_PRODUCTS) {
+          toast(`Only ${MAX_FEATURED_PRODUCTS} products can be featured at a time.`);
+          return false;
+        }
         item[key] = value;
         title.textContent = `${index + 1}. ${item.name || item.title || "Untitled"}`;
+        return true;
       }, type || "text", wide, uploadFolder));
     });
 
@@ -530,6 +573,7 @@ function renderCollections() {
     ["price", "Price", "number"],
     ["stockLevel", "Stock level", "number"],
     ["status", "Status"],
+    ["featured", "Featured product", "checkbox"],
     ["imageUrl", "Product image", "image", true, "products"],
     ["galleryImages", "Product gallery images", "gallery", true, "products"],
     ["summary", "Card summary", "textarea", true],
@@ -584,8 +628,10 @@ function renderBackendStatus() {
 function renderSummary() {
   const root = document.querySelector("#adminSummary");
   if (!root) return;
+  const featuredCount = featuredProductCount();
   root.innerHTML = `
     <article><strong>${content.products.length}</strong><span>Products</span></article>
+    <article><strong>${featuredCount}/${MAX_FEATURED_PRODUCTS}</strong><span>Featured</span></article>
     <article><strong>${mediaAssets.length}</strong><span>Media</span></article>
     <article><strong>${content.references.length}</strong><span>References</span></article>
     <article><strong>${content.posts.length}</strong><span>Blog posts</span></article>
@@ -632,7 +678,7 @@ function setupActions() {
     button.addEventListener("click", () => {
       const collection = button.dataset.add;
       const templates = {
-        products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, status: "Draft", imageUrl: "", galleryImages: [], summary: "", description: "" },
+        products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, status: "Draft", featured: false, imageUrl: "", galleryImages: [], summary: "", description: "" },
         references: { slug: `reference-${Date.now()}`, title: "New reference", type: "Guide", status: "Published", summary: "", body: "" },
         posts: { title: "New post", date: new Date().toISOString().slice(0, 10), status: "Draft", imageUrl: "", heroImageUrl: "", summary: "" }
       };
