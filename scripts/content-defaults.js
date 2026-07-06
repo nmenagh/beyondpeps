@@ -10,7 +10,15 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
     "blogHeroImageUrl": "/assets/hero-liquid-lab.png",
     "primaryCta": "Shop research supplies",
     "secondaryCta": "Explore references",
-    "disclaimer": "Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions."
+    "disclaimer": "Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.",
+    "shippingMethods": {
+      "enabledServicelevels": [
+        "usps_ground_advantage",
+        "usps_priority",
+        "ups_ground"
+      ],
+      "customServicelevels": ""
+    }
   },
   "categories": [
     "Pens",

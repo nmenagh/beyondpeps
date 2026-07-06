@@ -23,3 +23,5 @@ Recommended Vercel environment variables:
 - `SHIP_DEFAULT_HEIGHT_IN`
 
 Until products have their own package weight and dimensions, rates use one configurable default parcel and multiply the default weight by cart quantity.
+
+Shipping methods shown to customers are controlled in the admin panel under Site Content. The selected Shippo service-level tokens are sent to `/api/shipping-rates`, and the endpoint filters Shippo's returned rates before sending them back to the browser.

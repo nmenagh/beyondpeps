@@ -265,6 +265,7 @@ function setupMobileNav() {
 }
 
 loadContent().then((content) => {
+  window.BeyondPepsContent = content;
   applyContentBindings(content);
   renderProducts(content.products);
   renderFeaturedProducts(content.products);

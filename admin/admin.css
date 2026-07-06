@@ -240,6 +240,26 @@ button {
   accent-color: var(--mint);
 }
 
+.shipping-method-admin {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(1, 7, 11, 0.36);
+}
+
+.shipping-method-admin p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+
+.shipping-method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
 .richtext-field {
   gap: 0.7rem;
 }
@@ -543,7 +563,8 @@ button {
   }
 
   .form-grid,
-  .editor-card {
+  .editor-card,
+  .shipping-method-grid {
     grid-template-columns: 1fr;
   }
 }

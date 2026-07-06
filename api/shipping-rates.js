@@ -74,6 +74,20 @@ function normalizeRate(rate) {
   };
 }
 
+function allowedServicelevels(settings = {}) {
+  const values = [
+    ...(Array.isArray(settings.enabledServicelevels) ? settings.enabledServicelevels : []),
+    ...(Array.isArray(settings.customServicelevels) ? settings.customServicelevels : [])
+  ];
+  return new Set(values.map((value) => String(value || "").trim().toLowerCase()).filter(Boolean));
+}
+
+function filterAllowedRates(rates = [], settings = {}) {
+  const allowed = allowedServicelevels(settings);
+  if (!allowed.size) return rates;
+  return rates.filter((rate) => allowed.has(String(rate.servicelevelToken || "").toLowerCase()));
+}
+
 function requestBody(request) {
   if (!request.body) return {};
   if (typeof request.body === "string") return JSON.parse(request.body || "{}");
@@ -123,10 +137,10 @@ module.exports = async function handler(request, response) {
       return;
     }
 
-    const rates = (shipment.rates || [])
+    const rates = filterAllowedRates((shipment.rates || [])
       .map(normalizeRate)
       .filter((rate) => Number.isFinite(rate.amount))
-      .sort((a, b) => a.amount - b.amount);
+      .sort((a, b) => a.amount - b.amount), body.shippingMethods);
 
     json(response, 200, {
       shipmentId: shipment.object_id,

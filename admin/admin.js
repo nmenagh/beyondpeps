@@ -1,5 +1,16 @@
 const STORAGE_KEY = "beyondPepsContent";
 const MAX_FEATURED_PRODUCTS = 3;
+const SHIPPO_SERVICELEVEL_OPTIONS = [
+  ["usps_ground_advantage", "USPS Ground Advantage"],
+  ["usps_priority", "USPS Priority Mail"],
+  ["usps_priority_express", "USPS Priority Mail Express"],
+  ["ups_ground", "UPS Ground"],
+  ["ups_second_day_air", "UPS 2nd Day Air"],
+  ["ups_next_day_air", "UPS Next Day Air"],
+  ["fedex_ground", "FedEx Ground"],
+  ["fedex_2_day", "FedEx 2Day"],
+  ["fedex_standard_overnight", "FedEx Standard Overnight"]
+];
 
 let content = null;
 let adminAllowed = false;
@@ -15,6 +26,7 @@ const siteSchema = [
   ["blogHeroImageUrl", "Blog hero image URL", "image", "blog"],
   ["primaryCta", "Primary CTA"],
   ["secondaryCta", "Secondary CTA"],
+  ["shippingMethods", "Shippo shipping methods", "shipping_methods"],
   ["disclaimer", "Footer disclaimer", "textarea"]
 ];
 
@@ -145,6 +157,10 @@ function slugify(value) {
 }
 
 function normalizeContent(data) {
+  data.site = {
+    ...data.site,
+    shippingMethods: normalizeShippingMethods(data.site?.shippingMethods)
+  };
   data.products = (data.products || []).map((product) => ({
     ...product,
     featured: Boolean(product.featured)
@@ -158,6 +174,16 @@ function normalizeContent(data) {
     body: reference.body || reference.summary || ""
   }));
   return data;
+}
+
+function normalizeShippingMethods(value = {}) {
+  const enabledServicelevels = Array.isArray(value.enabledServicelevels)
+    ? value.enabledServicelevels
+    : ["usps_ground_advantage", "usps_priority", "ups_ground"];
+  return {
+    enabledServicelevels: [...new Set(enabledServicelevels.map((item) => String(item || "").trim()).filter(Boolean))],
+    customServicelevels: String(value.customServicelevels || "")
+  };
 }
 
 function featuredProductCount(excludeItem = null) {
@@ -305,6 +331,51 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
   const wrap = document.createElement("label");
   if (wide || type === "textarea" || type === "image" || type === "gallery") wrap.classList.add("field-wide");
   wrap.textContent = label;
+
+  if (type === "shipping_methods") {
+    const settings = normalizeShippingMethods(value);
+    const panel = document.createElement("div");
+    panel.className = "shipping-method-admin field-wide";
+
+    const heading = document.createElement("div");
+    heading.innerHTML = `
+      <span class="admin-field-label">${escapeAttribute(label)}</span>
+      <p>Choose the Shippo service levels customers can select at checkout. Add custom service tokens if Shippo returns methods not listed here.</p>
+    `;
+
+    const optionGrid = document.createElement("div");
+    optionGrid.className = "shipping-method-grid";
+
+    const sync = () => {
+      const enabledServicelevels = [...optionGrid.querySelectorAll("input[type='checkbox']:checked")].map((input) => input.value);
+      onInput({
+        enabledServicelevels,
+        customServicelevels: custom.value
+      });
+      updateJsonEditor();
+    };
+
+    SHIPPO_SERVICELEVEL_OPTIONS.forEach(([token, name]) => {
+      const item = document.createElement("label");
+      item.className = "checkbox-field";
+      item.innerHTML = `<input type="checkbox" value="${escapeAttribute(token)}"${settings.enabledServicelevels.includes(token) ? " checked" : ""}><span>${escapeAttribute(name)}</span>`;
+      item.querySelector("input").addEventListener("change", sync);
+      optionGrid.append(item);
+    });
+
+    const customLabel = document.createElement("label");
+    customLabel.className = "field-wide";
+    customLabel.textContent = "Custom Shippo service tokens";
+
+    const custom = document.createElement("textarea");
+    custom.value = settings.customServicelevels;
+    custom.placeholder = "One per line or comma-separated, for example: dhl_express_worldwide";
+    custom.addEventListener("input", sync);
+
+    customLabel.append(custom);
+    panel.append(heading, optionGrid, customLabel);
+    return panel;
+  }
 
   if (type === "checkbox") {
     wrap.classList.add("checkbox-field");

@@ -74,6 +74,25 @@
     return readJson(SHIPPING_RATES_KEY, []);
   }
 
+  function readSiteContent() {
+    if (window.BeyondPepsContent) return window.BeyondPepsContent;
+    return readJson("beyondPepsContent", window.BEYOND_PEPS_DEFAULT_CONTENT || {});
+  }
+
+  function shippingMethodSettings() {
+    const settings = readSiteContent()?.site?.shippingMethods || {};
+    const enabledServicelevels = Array.isArray(settings.enabledServicelevels)
+      ? settings.enabledServicelevels
+      : [];
+    const customServicelevels = String(settings.customServicelevels || "")
+      .split(/[\n,]+/)
+      .map((token) => token.trim())
+      .filter(Boolean);
+    return {
+      enabledServicelevels: [...new Set([...enabledServicelevels, ...customServicelevels])]
+    };
+  }
+
   function shippingLabel(rate) {
     const parts = [rate.provider, rate.servicelevel].filter(Boolean);
     return parts.join(" - ") || "Shipping";
@@ -204,7 +223,7 @@
         const response = await fetch("/api/shipping-rates", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address, items })
+          body: JSON.stringify({ address, items, shippingMethods: shippingMethodSettings() })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Unable to calculate shipping.");
