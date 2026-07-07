@@ -15,6 +15,7 @@ const SHIPPO_SERVICELEVEL_OPTIONS = [
 let content = null;
 let adminAllowed = false;
 let mediaAssets = [];
+let activeProductIndex = null;
 
 const siteSchema = [
   ["name", "Site name"],
@@ -27,6 +28,20 @@ const siteSchema = [
   ["primaryCta", "Primary CTA"],
   ["secondaryCta", "Secondary CTA"],
   ["disclaimer", "Footer disclaimer", "textarea"]
+];
+
+const productSchema = [
+  ["id", "ID"],
+  ["name", "Name"],
+  ["category", "Category"],
+  ["price", "Price", "number"],
+  ["stockLevel", "Stock level", "number"],
+  ["status", "Status"],
+  ["featured", "Featured product", "checkbox"],
+  ["imageUrl", "Product image", "image", true, "products"],
+  ["galleryImages", "Product gallery images", "gallery", true, "products"],
+  ["summary", "Card summary", "textarea", true],
+  ["description", "Extended product description", "textarea", true]
 ];
 
 async function loadContent() {
@@ -608,56 +623,95 @@ function renderShippingFields() {
   }, "shipping_methods"));
 }
 
+function editorCard(collection, item, index, schema) {
+  const card = document.createElement("article");
+  card.className = "editor-card";
+  const title = document.createElement("h2");
+  title.textContent = `${index + 1}. ${item.name || item.title || "Untitled"}`;
+  card.append(title);
+
+  schema.forEach(([key, label, type, wide, uploadFolder]) => {
+    card.append(field(label, item[key], (value) => {
+      if (collection === "products" && key === "featured" && value && featuredProductCount(item) >= MAX_FEATURED_PRODUCTS) {
+        toast(`Only ${MAX_FEATURED_PRODUCTS} products can be featured at a time.`);
+        return false;
+      }
+      item[key] = value;
+      title.textContent = `${index + 1}. ${item.name || item.title || "Untitled"}`;
+      return true;
+    }, type || "text", wide, uploadFolder));
+  });
+
+  const remove = document.createElement("button");
+  remove.className = "remove-item";
+  remove.type = "button";
+  remove.textContent = "Remove item";
+  remove.addEventListener("click", () => {
+    content[collection].splice(index, 1);
+    if (collection === "products") activeProductIndex = null;
+    renderAll();
+  });
+  card.append(remove);
+  return card;
+}
+
+function renderProductTiles() {
+  const root = document.querySelector("#productsEditor");
+  root.innerHTML = "";
+
+  if (Number.isInteger(activeProductIndex) && content.products[activeProductIndex]) {
+    const back = document.createElement("button");
+    back.className = "button ghost product-back";
+    back.type = "button";
+    back.textContent = "Back to product tiles";
+    back.addEventListener("click", () => {
+      activeProductIndex = null;
+      renderAll();
+    });
+    root.append(back, editorCard("products", content.products[activeProductIndex], activeProductIndex, productSchema));
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "product-admin-grid";
+
+  content.products.forEach((product, index) => {
+    const tile = document.createElement("button");
+    tile.className = "product-admin-tile";
+    tile.type = "button";
+    tile.innerHTML = `
+      <div class="product-admin-image">${imagePreviewMarkup(product.imageUrl)}</div>
+      <span class="product-admin-copy">
+        <strong>${escapeAttribute(product.name || "Untitled product")}</strong>
+        <small>${escapeAttribute(product.category || "Research Supplies")} &middot; ${escapeAttribute(product.status || "Draft")}</small>
+        <span>${escapeAttribute(product.featured ? "Featured" : "Not featured")} &middot; ${Number.isFinite(Number(product.stockLevel)) ? `${Number(product.stockLevel)} in stock` : "Stock unset"}</span>
+      </span>
+    `;
+    tile.addEventListener("click", () => {
+      activeProductIndex = index;
+      renderAll();
+    });
+    grid.append(tile);
+  });
+
+  if (content.products.length) {
+    root.append(grid);
+  } else {
+    root.innerHTML = `<div class="empty-media">No products yet. Use Add product to create one.</div>`;
+  }
+}
+
 function renderCollection(collection, rootSelector, schema) {
   const root = document.querySelector(rootSelector);
   root.innerHTML = "";
 
   content[collection].forEach((item, index) => {
-    const card = document.createElement("article");
-    card.className = "editor-card";
-    const title = document.createElement("h2");
-    title.textContent = `${index + 1}. ${item.name || item.title || "Untitled"}`;
-    card.append(title);
-
-    schema.forEach(([key, label, type, wide, uploadFolder]) => {
-      card.append(field(label, item[key], (value) => {
-        if (collection === "products" && key === "featured" && value && featuredProductCount(item) >= MAX_FEATURED_PRODUCTS) {
-          toast(`Only ${MAX_FEATURED_PRODUCTS} products can be featured at a time.`);
-          return false;
-        }
-        item[key] = value;
-        title.textContent = `${index + 1}. ${item.name || item.title || "Untitled"}`;
-        return true;
-      }, type || "text", wide, uploadFolder));
-    });
-
-    const remove = document.createElement("button");
-    remove.className = "remove-item";
-    remove.type = "button";
-    remove.textContent = "Remove item";
-    remove.addEventListener("click", () => {
-      content[collection].splice(index, 1);
-      renderAll();
-    });
-    card.append(remove);
-    root.append(card);
+    root.append(editorCard(collection, item, index, schema));
   });
 }
 
 function renderCollections() {
-  renderCollection("products", "#productsEditor", [
-    ["id", "ID"],
-    ["name", "Name"],
-    ["category", "Category"],
-    ["price", "Price", "number"],
-    ["stockLevel", "Stock level", "number"],
-    ["status", "Status"],
-    ["featured", "Featured product", "checkbox"],
-    ["imageUrl", "Product image", "image", true, "products"],
-    ["galleryImages", "Product gallery images", "gallery", true, "products"],
-    ["summary", "Card summary", "textarea", true],
-    ["description", "Extended product description", "textarea", true]
-  ]);
+  renderProductTiles();
 
   renderCollection("references", "#referencesEditor", [
     ["slug", "Slug"],
@@ -763,6 +817,7 @@ function setupActions() {
         posts: { title: "New post", date: new Date().toISOString().slice(0, 10), status: "Draft", imageUrl: "", heroImageUrl: "", summary: "" }
       };
       content[collection].push(templates[collection]);
+      if (collection === "products") activeProductIndex = content.products.length - 1;
       renderAll();
     });
   });
