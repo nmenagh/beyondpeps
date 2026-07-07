@@ -378,7 +378,8 @@ button {
 }
 
 .shipping-method-admin,
-.payment-method-admin {
+.payment-method-admin,
+.payment-test-card {
   display: grid;
   gap: 0.85rem;
   padding: 1rem;
@@ -388,9 +389,17 @@ button {
 }
 
 .shipping-method-admin p,
-.payment-method-admin p {
+.payment-method-admin p,
+.payment-test-card p {
   margin: 0.35rem 0 0;
   color: var(--muted);
+}
+
+.payment-test-card label {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .shipping-method-grid {

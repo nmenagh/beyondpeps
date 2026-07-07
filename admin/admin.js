@@ -17,6 +17,7 @@ let adminAllowed = false;
 let mediaAssets = [];
 let activeProductIndex = null;
 let activeSiteCopyPageId = null;
+let activeAdminEmail = "";
 
 const siteSchema = [
   ["name", "Site name"],
@@ -852,6 +853,77 @@ function renderPaymentFields() {
   root.append(field("Zelle payment settings", content.site.paymentMethods, (value) => {
     content.site.paymentMethods = normalizePaymentMethods(value);
   }, "payment_settings"));
+
+  const tester = document.createElement("article");
+  tester.className = "payment-test-card field-wide";
+  tester.innerHTML = `
+    <div>
+      <span class="admin-field-label">Send test email</span>
+      <p>Send a sample Zelle order confirmation using the current payment settings.</p>
+    </div>
+    <label>Recipient email<input id="testEmailRecipient" type="email" value="${escapeAttribute(activeAdminEmail)}" placeholder="you@example.com"></label>
+    <button class="button primary" id="sendTestEmail" type="button">Send test email</button>
+    <p class="admin-note" id="testEmailStatus"></p>
+  `;
+  root.append(tester);
+
+  tester.querySelector("#sendTestEmail").addEventListener("click", () => {
+    sendTestEmail(tester.querySelector("#testEmailRecipient").value.trim());
+  });
+}
+
+async function sendTestEmail(recipient) {
+  const status = document.querySelector("#testEmailStatus");
+  const button = document.querySelector("#sendTestEmail");
+  if (!recipient) {
+    status.textContent = "Enter a recipient email address.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Sending...";
+  status.textContent = "";
+
+  const order = {
+    orderId: "test-order",
+    orderNumber: "TEST-ZELLE",
+    paymentReference: "BP-ZELLE-TEST",
+    subtotalCents: 1500,
+    shippingCents: 500,
+    totalCents: 2000,
+    currency: "USD",
+    status: "awaiting_zelle_payment"
+  };
+
+  try {
+    const response = await fetch("../api/order-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "order_confirmation",
+        customer: { name: "Test Customer", email: recipient },
+        order,
+        items: [{ id: "test-item", name: "Beyond Peps Test Item", price: 15, quantity: 1 }],
+        shippingRate: { provider: "Test Carrier", servicelevel: "Test Shipping", amount: 5 },
+        paymentSettings: normalizePaymentMethods(content.site.paymentMethods)
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Test email failed.");
+    if (!data.sent) {
+      status.textContent = data.reason || "Email endpoint responded, but email is not configured.";
+      toast("Email is not configured.");
+      return;
+    }
+    status.textContent = `Test email sent to ${recipient}.`;
+    toast("Test email sent.");
+  } catch (error) {
+    status.textContent = error.message;
+    toast("Test email failed.");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Send test email";
+  }
 }
 
 function editorCard(collection, item, index, schema) {
@@ -1151,6 +1223,7 @@ async function requireAdmin() {
     setAdminLocked("You are not signed in.");
     return false;
   }
+  activeAdminEmail = user.email || "";
 
   const isAdmin = await window.BeyondPepsSupabase.currentUserIsAdmin();
   if (!isAdmin) {
