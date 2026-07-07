@@ -268,7 +268,8 @@ function normalizeContent(data) {
       ...(defaults.site?.pages || {}),
       ...(data.site?.pages || {})
     },
-    shippingMethods: normalizeShippingMethods(data.site?.shippingMethods)
+    shippingMethods: normalizeShippingMethods(data.site?.shippingMethods),
+    paymentMethods: normalizePaymentMethods(data.site?.paymentMethods)
   };
   data.products = (data.products || []).map((product) => ({
     ...product,
@@ -306,6 +307,21 @@ function normalizeShippingMethods(value = {}) {
   return {
     enabledServicelevels: [...new Set(enabledServicelevels.map((item) => String(item || "").trim()).filter(Boolean))],
     customServicelevels: String(value.customServicelevels || "")
+  };
+}
+
+function normalizePaymentMethods(value = {}) {
+  const zelle = value.zelle || {};
+  return {
+    zelle: {
+      enabled: zelle.enabled !== false,
+      displayName: zelle.displayName || "Zelle",
+      recipientName: zelle.recipientName || "",
+      recipientEmail: zelle.recipientEmail || "",
+      recipientPhone: zelle.recipientPhone || "",
+      memoInstructions: zelle.memoInstructions || "Include your order number in the Zelle memo.",
+      confirmationIntro: zelle.confirmationIntro || "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
+    }
   };
 }
 
@@ -497,6 +513,58 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
 
     customLabel.append(custom);
     panel.append(heading, optionGrid, customLabel);
+    return panel;
+  }
+
+  if (type === "payment_settings") {
+    const settings = normalizePaymentMethods(value);
+    const panel = document.createElement("div");
+    panel.className = "payment-method-admin field-wide";
+
+    const heading = document.createElement("div");
+    heading.innerHTML = `
+      <span class="admin-field-label">${escapeAttribute(label)}</span>
+      <p>These Zelle details are shown at checkout and used in the order confirmation email.</p>
+    `;
+
+    const zelle = settings.zelle;
+    const enabled = field("Enable Zelle checkout", zelle.enabled, (next) => {
+      zelle.enabled = next;
+      onInput(settings);
+      return true;
+    }, "checkbox");
+    const displayName = field("Payment label", zelle.displayName, (next) => {
+      zelle.displayName = next;
+      onInput(settings);
+      return true;
+    });
+    const recipientName = field("Zelle recipient name", zelle.recipientName, (next) => {
+      zelle.recipientName = next;
+      onInput(settings);
+      return true;
+    });
+    const recipientEmail = field("Zelle email", zelle.recipientEmail, (next) => {
+      zelle.recipientEmail = next;
+      onInput(settings);
+      return true;
+    }, "email");
+    const recipientPhone = field("Zelle phone", zelle.recipientPhone, (next) => {
+      zelle.recipientPhone = next;
+      onInput(settings);
+      return true;
+    }, "tel");
+    const memoInstructions = field("Memo instructions", zelle.memoInstructions, (next) => {
+      zelle.memoInstructions = next;
+      onInput(settings);
+      return true;
+    }, "textarea", true);
+    const confirmationIntro = field("Customer confirmation message", zelle.confirmationIntro, (next) => {
+      zelle.confirmationIntro = next;
+      onInput(settings);
+      return true;
+    }, "textarea", true);
+
+    panel.append(heading, enabled, displayName, recipientName, recipientEmail, recipientPhone, memoInstructions, confirmationIntro);
     return panel;
   }
 
@@ -777,6 +845,15 @@ function renderShippingFields() {
   }, "shipping_methods"));
 }
 
+function renderPaymentFields() {
+  const root = document.querySelector("#paymentFields");
+  if (!root) return;
+  root.innerHTML = "";
+  root.append(field("Zelle payment settings", content.site.paymentMethods, (value) => {
+    content.site.paymentMethods = normalizePaymentMethods(value);
+  }, "payment_settings"));
+}
+
 function editorCard(collection, item, index, schema) {
   const card = document.createElement("article");
   card.className = "editor-card";
@@ -897,6 +974,7 @@ function renderAll() {
   renderSummary();
   renderSiteFields();
   renderShippingFields();
+  renderPaymentFields();
   renderCollections();
   renderMediaLibrary();
   updateJsonEditor();

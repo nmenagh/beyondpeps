@@ -2,6 +2,7 @@
   const SHIPPING_ADDRESS_KEY = "beyondPepsShippingAddress";
   const SHIPPING_RATE_KEY = "beyondPepsShippingRate";
   const SHIPPING_RATES_KEY = "beyondPepsShippingRates";
+  const PAYMENT_METHOD_KEY = "beyondPepsPaymentMethod";
   const US_STATES = [
     "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS",
     "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM",
@@ -93,6 +94,25 @@
     };
   }
 
+  function paymentMethodSettings() {
+    const zelle = readSiteContent()?.site?.paymentMethods?.zelle || {};
+    return {
+      zelle: {
+        enabled: zelle.enabled !== false,
+        displayName: zelle.displayName || "Zelle",
+        recipientName: zelle.recipientName || "",
+        recipientEmail: zelle.recipientEmail || "",
+        recipientPhone: zelle.recipientPhone || "",
+        memoInstructions: zelle.memoInstructions || "Include your order number in the Zelle memo.",
+        confirmationIntro: zelle.confirmationIntro || "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
+      }
+    };
+  }
+
+  function readPaymentMethod() {
+    return localStorage.getItem(PAYMENT_METHOD_KEY) || "zelle";
+  }
+
   function shippingLabel(rate) {
     const parts = [rate.provider, rate.servicelevel].filter(Boolean);
     return parts.join(" - ") || "Shipping";
@@ -148,6 +168,53 @@
     `;
   }
 
+  function renderPaymentOptions(settings, selectedMethod) {
+    const options = [];
+    if (settings.zelle?.enabled) {
+      options.push(`
+        <label class="payment-rate ${selectedMethod === "zelle" ? "is-selected" : ""}">
+          <input type="radio" name="paymentMethod" value="zelle"${selectedMethod === "zelle" ? " checked" : ""}>
+          <span>
+            <strong>${escapeHtml(settings.zelle.displayName || "Zelle")}</strong>
+            <small>Place the order now and receive payment instructions by email.</small>
+          </span>
+        </label>
+      `);
+    }
+
+    return `
+      <div class="glass-panel payment-card">
+        <div class="shipping-heading">
+          <div>
+            <p class="eyebrow">Payment</p>
+            <h2>Choose payment method</h2>
+          </div>
+        </div>
+        ${options.length ? `<div class="payment-rates">${options.join("")}</div>` : `<p class="cart-message is-error">No payment methods are currently enabled.</p>`}
+      </div>
+    `;
+  }
+
+  function renderZelleInstructions(settings, order) {
+    const zelle = settings.zelle || {};
+    const details = [
+      zelle.recipientName ? ["Name", zelle.recipientName] : null,
+      zelle.recipientEmail ? ["Email", zelle.recipientEmail] : null,
+      zelle.recipientPhone ? ["Phone", zelle.recipientPhone] : null,
+      ["Memo", order.paymentReference || order.orderNumber || ""]
+    ].filter(Boolean);
+
+    return `
+      <div class="cart-message zelle-instructions">
+        <strong>${escapeHtml(zelle.confirmationIntro || "Send your Zelle payment using the details below.")}</strong>
+        <dl>
+          ${details.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}
+        </dl>
+        <p>${escapeHtml(zelle.memoInstructions || "Include your order number in the Zelle memo.")}</p>
+      </div>
+    `;
+  }
+
   function collectShippingAddress() {
     const form = document.querySelector("#shippingForm");
     const data = Object.fromEntries([...form.querySelectorAll("input, select")].map((field) => [field.name, field.value.trim()]));
@@ -186,16 +253,19 @@
 
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const selectedRate = readShippingRate();
+    const paymentSettings = paymentMethodSettings();
+    const selectedPaymentMethod = readPaymentMethod();
     const total = subtotal + Number(selectedRate?.amount || 0);
     summary.innerHTML = `
       ${renderShippingForm(readShippingAddress(), selectedRate, readShippingRates())}
+      ${renderPaymentOptions(paymentSettings, selectedPaymentMethod)}
       <div class="glass-panel cart-summary-card">
         <div><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
         <div><span>Shipping</span><strong>${selectedRate ? money(selectedRate.amount) : "Select method"}</strong></div>
         <div class="summary-total"><span>Estimated total</span><strong>${money(total)}</strong></div>
         <p>Items added to cart are reserved for ${window.BeyondPepsCart.holdMinutes} minutes, then released if checkout is not completed.</p>
         ${message ? `<p class="cart-message">${escapeHtml(message)}</p>` : ""}
-        <button class="button primary" id="checkoutCheck" type="button">Check inventory & checkout</button>
+        <button class="button primary" id="checkoutCheck" type="button">Place order</button>
         <button class="button ghost" id="clearCart" type="button">Clear cart</button>
       </div>
     `;
@@ -253,20 +323,63 @@
     }
     attachShippingRateHandlers(readShippingRates());
 
+    document.querySelectorAll("input[name='paymentMethod']").forEach((input) => {
+      input.addEventListener("change", async () => {
+        localStorage.setItem(PAYMENT_METHOD_KEY, input.value);
+        await renderCart();
+      });
+    });
+
     document.querySelector("#checkoutCheck").addEventListener("click", async () => {
       const button = document.querySelector("#checkoutCheck");
       button.disabled = true;
-      button.textContent = "Checking inventory...";
+      button.textContent = "Placing order...";
       if (!readShippingRate()) {
         await renderCart("Please calculate and select a shipping method before checkout.");
         return;
       }
+      const address = collectShippingAddress();
+      if (!address.email) {
+        await renderCart("Please add an email address so we can send your order confirmation.");
+        return;
+      }
+      if (readPaymentMethod() !== "zelle" || !paymentSettings.zelle?.enabled) {
+        await renderCart("Please choose an available payment method.");
+        return;
+      }
       const result = await window.BeyondPepsCart.validateCheckout();
-      if (result.ok) {
-        await renderCart("Inventory check passed. Payment connection is the next step.");
-      } else {
+      if (!result.ok) {
         const unavailable = (result.unavailable || []).map((item) => `${item.id}: ${item.available ?? 0} available`).join("; ");
         await renderCart(result.message || `Some items are no longer available. ${unavailable}`);
+        return;
+      }
+
+      try {
+        const order = await window.BeyondPepsSupabase.createZelleOrder({
+          cartId: window.BeyondPepsCart.cartId(),
+          customer: { name: address.name, email: address.email, phone: address.phone },
+          shippingAddress: address,
+          shippingRate: readShippingRate(),
+          items
+        });
+        if (!order?.ok) throw new Error(order?.message || "Order could not be placed.");
+
+        const emailResult = await sendOrderConfirmation(order, address, items, readShippingRate(), paymentSettings);
+        window.BeyondPepsCart.clearCart();
+        localStorage.removeItem(SHIPPING_RATE_KEY);
+        localStorage.removeItem(SHIPPING_RATES_KEY);
+        const emailText = emailResult?.sent ? " A confirmation email has been sent." : " Email is not configured yet, so save these payment details.";
+        await renderCart(`Order ${order.orderNumber} placed.${emailText}`);
+        document.querySelector("#cartItems").innerHTML = `
+          <div class="empty-state glass-panel">
+            <h2>Order ${escapeHtml(order.orderNumber)} placed.</h2>
+            <p>Your order is reserved while Zelle payment is matched.</p>
+            ${renderZelleInstructions(paymentSettings, order)}
+            <a class="button primary" href="shop.html">Continue shopping</a>
+          </div>
+        `;
+      } catch (error) {
+        await renderCart(error.message);
       }
     });
 
@@ -276,7 +389,38 @@
     });
   }
 
+  async function sendOrderConfirmation(order, address, items, shippingRate, paymentSettings) {
+    try {
+      const response = await fetch("/api/order-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "order_confirmation",
+          customer: { name: address.name, email: address.email, phone: address.phone },
+          order,
+          items,
+          shippingRate,
+          paymentSettings
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Confirmation email failed.");
+      return data;
+    } catch (error) {
+      console.warn("Confirmation email did not send.", error);
+      return { sent: false, reason: error.message };
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
-    window.BeyondPepsCart.reserveCart().then(() => renderCart());
+    const contentReady = window.BeyondPepsSite?.loadContent
+      ? window.BeyondPepsSite.loadContent().then((content) => {
+        if (content) window.BeyondPepsContent = content;
+      })
+      : Promise.resolve();
+    contentReady
+      .catch((error) => console.warn("Cart content refresh unavailable.", error))
+      .then(() => window.BeyondPepsCart.reserveCart())
+      .then(() => renderCart());
   });
 })();

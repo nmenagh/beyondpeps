@@ -965,7 +965,8 @@ output {
   color: #eafff8;
 }
 
-.shipping-card {
+.shipping-card,
+.payment-card {
   display: grid;
   gap: 1rem;
   padding: 1rem;
@@ -996,12 +997,14 @@ output {
   gap: 1rem;
 }
 
-.shipping-rates {
+.shipping-rates,
+.payment-rates {
   display: grid;
   gap: 0.65rem;
 }
 
-.shipping-rate {
+.shipping-rate,
+.payment-rate {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -1013,29 +1016,64 @@ output {
   cursor: pointer;
 }
 
-.shipping-rate.is-selected {
+.shipping-rate.is-selected,
+.payment-rate.is-selected {
   border-color: rgba(101, 255, 200, 0.72);
   background: rgba(101, 255, 200, 0.1);
 }
 
-.shipping-rate input {
+.shipping-rate input,
+.payment-rate input {
   width: 1.1rem;
   min-height: 0;
   accent-color: var(--mint);
 }
 
-.shipping-rate span {
+.shipping-rate span,
+.payment-rate span {
   display: grid;
   gap: 0.2rem;
 }
 
 .shipping-rate strong,
-.shipping-rate b {
+.shipping-rate b,
+.payment-rate strong {
   color: #ffffff;
 }
 
-.shipping-rate small {
+.shipping-rate small,
+.payment-rate small {
   color: var(--muted);
+}
+
+.zelle-instructions {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.zelle-instructions dl {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.zelle-instructions dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(188, 244, 255, 0.16);
+}
+
+.zelle-instructions dt {
+  color: var(--muted);
+}
+
+.zelle-instructions dd {
+  margin: 0;
+  color: #ffffff;
+  font-weight: 800;
+  text-align: right;
 }
 
 .empty-state {

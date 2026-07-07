@@ -47,7 +47,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "cart": {
         "eyebrow": "Cart",
         "title": "Review your research supply cart.",
-        "body": "Payment options are coming next. For now, this cart prepares the storefront flow and keeps selected items in your browser."
+        "body": "Select shipping, confirm inventory, and choose a payment method to place your order."
       },
       "account": {
         "eyebrow": "Account",
@@ -62,6 +62,17 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
         "ups_ground"
       ],
       "customServicelevels": ""
+    },
+    "paymentMethods": {
+      "zelle": {
+        "enabled": true,
+        "displayName": "Zelle",
+        "recipientName": "",
+        "recipientEmail": "",
+        "recipientPhone": "",
+        "memoInstructions": "Include your order number in the Zelle memo.",
+        "confirmationIntro": "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
+      }
     }
   },
   "categories": [
