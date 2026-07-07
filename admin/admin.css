@@ -216,6 +216,109 @@ button {
   gap: 0.85rem;
 }
 
+.order-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.85rem;
+}
+
+.order-admin-tile {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 10rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(101, 255, 200, 0.12), transparent 10rem),
+    rgba(255, 255, 255, 0.065);
+  color: var(--text);
+  text-align: left;
+}
+
+.order-admin-tile:hover {
+  border-color: var(--line-strong);
+}
+
+.order-admin-tile strong {
+  color: #ffffff;
+  font-size: 1.2rem;
+}
+
+.order-admin-tile small,
+.order-admin-tile span:not(.order-admin-status) {
+  color: var(--muted);
+}
+
+.order-admin-status {
+  width: fit-content;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid rgba(101, 255, 200, 0.32);
+  border-radius: 999px;
+  color: var(--mint);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.order-detail-card {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.order-detail-header {
+  display: grid;
+  gap: 1rem;
+}
+
+.order-detail-header h2 {
+  color: #ffffff;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+}
+
+.order-detail-section {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.order-detail-section h3 {
+  margin: 0;
+  color: #ffffff;
+}
+
+.order-detail-section p,
+.order-items-table p {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+  color: var(--muted);
+}
+
+.order-detail-section strong,
+.order-items-table strong {
+  color: #ffffff;
+}
+
+.order-detail-section pre {
+  margin: 0;
+  white-space: pre-wrap;
+  color: #ffffff;
+  font: inherit;
+}
+
+.order-detail-section a {
+  color: var(--mint);
+}
+
+.order-items-table {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .product-admin-tile {
   display: grid;
   grid-template-rows: 160px minmax(0, 1fr);
@@ -712,6 +815,7 @@ button {
 
   .form-grid,
   .editor-card,
+  .order-detail-card,
   .shipping-method-grid {
     grid-template-columns: 1fr;
   }

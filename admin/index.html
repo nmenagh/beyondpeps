@@ -42,6 +42,7 @@
         <button class="tab is-active" data-panel="sitePanel" type="button">Site copy</button>
         <button class="tab" data-panel="shippingPanel" type="button">Shipping</button>
         <button class="tab" data-panel="paymentPanel" type="button">Payments</button>
+        <button class="tab" data-panel="ordersPanel" type="button">Orders</button>
         <button class="tab" data-panel="productsPanel" type="button">Products</button>
         <button class="tab" data-panel="mediaPanel" type="button">Media</button>
         <button class="tab" data-panel="referencesPanel" type="button">References</button>
@@ -76,6 +77,17 @@
             </div>
           </div>
           <div class="form-grid" id="paymentFields"></div>
+        </div>
+
+        <div class="admin-panel" id="ordersPanel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Fulfillment</p>
+              <h1>Orders</h1>
+            </div>
+            <button class="button ghost" id="refreshOrders" type="button">Refresh orders</button>
+          </div>
+          <div class="editor-list" id="ordersEditor"></div>
         </div>
 
         <div class="admin-panel" id="productsPanel">

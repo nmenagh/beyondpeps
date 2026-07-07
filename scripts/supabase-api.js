@@ -541,6 +541,34 @@
     return request(`/rest/v1/orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,status,total_cents,currency,created_at&order=created_at.desc`);
   }
 
+  async function loadAdminOrders() {
+    if (!isConfigured()) return [];
+    return request("/rest/v1/orders?select=*,order_items(*)&order=created_at.desc");
+  }
+
+  async function updateAdminOrder(orderId, fields = {}) {
+    if (!isConfigured()) throw new Error("Supabase URL or anon key is missing.");
+    const rows = await request(`/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      prefer: "return=representation",
+      body: fields
+    });
+    return rows?.[0] || null;
+  }
+
+  async function deleteAdminOrder(orderId) {
+    if (!isConfigured()) throw new Error("Supabase URL or anon key is missing.");
+    await request(`/rest/v1/order_items?order_id=eq.${encodeURIComponent(orderId)}`, {
+      method: "DELETE",
+      prefer: "return=minimal"
+    });
+    await request(`/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
+      method: "DELETE",
+      prefer: "return=minimal"
+    });
+    return true;
+  }
+
   window.BeyondPepsSupabase = {
     clearSession,
     currentUser,
@@ -549,12 +577,15 @@
     isConfigured,
     loadProfile,
     loadOrders,
+    loadAdminOrders,
     loadContent,
     loadMediaAssets,
     recordMediaAsset,
     reserveCart,
     saveContent,
+    updateAdminOrder,
     validateCheckout,
+    deleteAdminOrder,
     saveProfile,
     session,
     signIn,

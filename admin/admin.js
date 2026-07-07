@@ -15,9 +15,12 @@ const SHIPPO_SERVICELEVEL_OPTIONS = [
 let content = null;
 let adminAllowed = false;
 let mediaAssets = [];
+let orders = [];
+let activeOrderId = null;
 let activeProductIndex = null;
 let activeSiteCopyPageId = null;
 let activeAdminEmail = "";
+const ORDER_STATUSES = ["pending", "paid", "fulfilled", "cancelled", "refunded"];
 
 const siteSchema = [
   ["name", "Site name"],
@@ -208,6 +211,16 @@ async function loadMediaAssets() {
   }
 }
 
+async function loadAdminOrders() {
+  try {
+    orders = await window.BeyondPepsSupabase?.loadAdminOrders?.() || [];
+  } catch (error) {
+    console.warn("Orders unavailable.", error);
+    orders = [];
+    toast(`Orders unavailable: ${error.message}`);
+  }
+}
+
 function cloneDefaultContent() {
   return JSON.parse(JSON.stringify(window.BEYOND_PEPS_DEFAULT_CONTENT || {
     site: {},
@@ -369,6 +382,35 @@ function toast(message) {
   node.textContent = message;
   node.classList.add("is-visible");
   window.setTimeout(() => node.classList.remove("is-visible"), 2200);
+}
+
+function moneyFromCents(cents = 0, currency = "USD") {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency || "USD"
+  }).format(Number(cents || 0) / 100);
+}
+
+function formatDate(value = "") {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+  return date.toLocaleString();
+}
+
+function orderNumber(order = {}) {
+  return String(order.id || "").slice(0, 8).toUpperCase();
+}
+
+function orderEmail(order = {}) {
+  return order.customer_email || order.email || order.metadata?.customer?.email || "";
+}
+
+function orderCustomerName(order = {}) {
+  return order.metadata?.customer?.name || order.shipping_address?.name || "Customer";
+}
+
+function shippingLine(order = {}) {
+  return order.selected_carrier || [order.shipping_method?.provider, order.shipping_method?.servicelevel].filter(Boolean).join(" - ") || "Shipping method not selected";
 }
 
 function cleanRichHtml(html = "") {
@@ -939,6 +981,209 @@ async function sendTestEmail(recipient) {
   }
 }
 
+function renderOrders() {
+  const root = document.querySelector("#ordersEditor");
+  if (!root) return;
+  root.innerHTML = "";
+
+  const activeOrder = orders.find((order) => order.id === activeOrderId);
+  if (activeOrder) {
+    root.append(renderOrderDetail(activeOrder));
+    return;
+  }
+
+  if (!orders.length) {
+    root.innerHTML = `<div class="empty-media">No orders yet.</div>`;
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "order-admin-grid";
+  orders.forEach((order) => {
+    const tile = document.createElement("button");
+    tile.className = "order-admin-tile";
+    tile.type = "button";
+    tile.innerHTML = `
+      <span class="order-admin-status">${escapeAttribute(order.status || "pending")}</span>
+      <strong>Order ${escapeAttribute(orderNumber(order))}</strong>
+      <small>${escapeAttribute(orderEmail(order) || "No email")} &middot; ${escapeAttribute(formatDate(order.created_at))}</small>
+      <span>${escapeAttribute(moneyFromCents(order.total_cents, order.currency))} &middot; ${escapeAttribute(shippingLine(order))}</span>
+    `;
+    tile.addEventListener("click", () => {
+      activeOrderId = order.id;
+      renderAll();
+    });
+    grid.append(tile);
+  });
+  root.append(grid);
+}
+
+function renderOrderDetail(order) {
+  const card = document.createElement("article");
+  card.className = "editor-card order-detail-card";
+  const items = Array.isArray(order.order_items) ? order.order_items : [];
+  const statusOptions = ORDER_STATUSES.map((status) => `<option value="${status}"${order.status === status ? " selected" : ""}>${status}</option>`).join("");
+  const labelUrl = order.label_url || "";
+  const trackingUrl = order.tracking_url || "";
+
+  card.innerHTML = `
+    <div class="field-wide order-detail-header">
+      <button class="button ghost" id="backToOrders" type="button">Back to orders</button>
+      <div>
+        <p class="eyebrow">Order ${escapeAttribute(orderNumber(order))}</p>
+        <h2>${escapeAttribute(orderCustomerName(order))}</h2>
+        <p>${escapeAttribute(orderEmail(order))}</p>
+      </div>
+    </div>
+
+    <section class="order-detail-section">
+      <h3>Status</h3>
+      <label>Status
+        <select id="orderStatus">${statusOptions}</select>
+      </label>
+      <button class="button primary" id="saveOrderStatus" type="button">Save status</button>
+      <button class="button ghost" id="cancelOrder" type="button">Cancel order</button>
+      <button class="remove-item" id="deleteOrder" type="button">Delete order</button>
+    </section>
+
+    <section class="order-detail-section">
+      <h3>Totals</h3>
+      <p><span>Subtotal</span><strong>${escapeAttribute(moneyFromCents(order.subtotal_cents, order.currency))}</strong></p>
+      <p><span>Shipping</span><strong>${escapeAttribute(moneyFromCents(order.shipping_cents, order.currency))}</strong></p>
+      <p><span>Total</span><strong>${escapeAttribute(moneyFromCents(order.total_cents, order.currency))}</strong></p>
+      <p><span>Payment</span><strong>${escapeAttribute(order.payment_provider || order.payment_method || "Payment")}</strong></p>
+      <p><span>Reference</span><strong>${escapeAttribute(order.payment_reference || "None")}</strong></p>
+    </section>
+
+    <section class="order-detail-section field-wide">
+      <h3>Shipping</h3>
+      <p>${escapeAttribute(shippingLine(order))}</p>
+      <pre>${escapeAttribute(addressBlock(order.shipping_address))}</pre>
+      ${labelUrl ? `<p><a href="${escapeAttribute(labelUrl)}" target="_blank" rel="noopener">Open shipping label</a></p>` : ""}
+      ${trackingUrl ? `<p><a href="${escapeAttribute(trackingUrl)}" target="_blank" rel="noopener">Track package ${escapeAttribute(order.tracking_number || "")}</a></p>` : ""}
+      <button class="button primary" id="createShippoLabel" type="button">${labelUrl ? "Recheck label" : "Create Shippo label"}</button>
+      <p class="admin-note" id="labelStatus"></p>
+    </section>
+
+    <section class="order-detail-section field-wide">
+      <h3>Items</h3>
+      <div class="order-items-table">
+        ${items.map((item) => `
+          <p>
+            <span>${escapeAttribute(item.product_title || item.product_name || item.product_slug || "Item")} x ${escapeAttribute(item.quantity || 1)}</span>
+            <strong>${escapeAttribute(moneyFromCents(item.total_cents || (item.unit_price_cents || item.price_cents_at_purchase || 0) * (item.quantity || 1), order.currency))}</strong>
+          </p>
+        `).join("") || "<p>No items found for this order.</p>"}
+      </div>
+    </section>
+  `;
+
+  card.querySelector("#backToOrders").addEventListener("click", () => {
+    activeOrderId = null;
+    renderAll();
+  });
+  card.querySelector("#saveOrderStatus").addEventListener("click", () => updateOrderStatus(order.id, card.querySelector("#orderStatus").value));
+  card.querySelector("#cancelOrder").addEventListener("click", () => updateOrderStatus(order.id, "cancelled"));
+  card.querySelector("#deleteOrder").addEventListener("click", () => deleteOrder(order.id));
+  card.querySelector("#createShippoLabel").addEventListener("click", () => createShippoLabel(order.id));
+
+  return card;
+}
+
+function addressBlock(address = {}) {
+  return [
+    address.name,
+    address.street1,
+    address.street2,
+    [address.city, address.state, address.zip].filter(Boolean).join(", "),
+    address.phone,
+    address.email
+  ].filter(Boolean).join("\n");
+}
+
+async function updateOrderStatus(orderId, status) {
+  try {
+    await window.BeyondPepsSupabase.updateAdminOrder(orderId, { status });
+    await loadAdminOrders();
+    toast(`Order marked ${status}.`);
+    renderAll();
+  } catch (error) {
+    toast(`Status update failed: ${error.message}`);
+  }
+}
+
+async function deleteOrder(orderId) {
+  if (!window.confirm("Delete this order permanently? This cannot be undone.")) return;
+  try {
+    await window.BeyondPepsSupabase.deleteAdminOrder(orderId);
+    activeOrderId = null;
+    await loadAdminOrders();
+    toast("Order deleted.");
+    renderAll();
+  } catch (error) {
+    toast(`Delete failed: ${error.message}`);
+  }
+}
+
+async function createShippoLabel(orderId) {
+  const status = document.querySelector("#labelStatus");
+  const button = document.querySelector("#createShippoLabel");
+  button.disabled = true;
+  button.textContent = "Creating label...";
+  status.textContent = "";
+
+  try {
+    const token = window.BeyondPepsSupabase.session()?.access_token;
+    const response = await fetch("../api/create-label", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token || ""}`
+      },
+      body: JSON.stringify({ orderId })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Label creation failed.");
+    await loadAdminOrders();
+    const updatedOrder = orders.find((order) => order.id === orderId) || data.order;
+    await sendShippedEmail(updatedOrder, data);
+    status.textContent = data.labelUrl ? "Label created. Shipping email sent if email is configured." : "Label already exists.";
+    toast("Shippo label ready.");
+    renderAll();
+  } catch (error) {
+    status.textContent = error.message;
+    toast("Label creation failed.");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Create Shippo label";
+  }
+}
+
+async function sendShippedEmail(order = {}, labelData = {}) {
+  const email = orderEmail(order);
+  if (!email) return;
+  try {
+    await fetch("../api/order-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "order_shipped",
+        customer: { email, name: orderCustomerName(order) },
+        order: {
+          orderId: order.id,
+          orderNumber: orderNumber(order),
+          trackingNumber: labelData.trackingNumber || order.tracking_number,
+          trackingUrl: labelData.trackingUrl || order.tracking_url,
+          shippingProvider: order.shipping_provider || order.tracking_carrier || order.shipping_method?.provider,
+          shippingService: order.shipping_service || order.shipping_method?.servicelevel
+        }
+      })
+    });
+  } catch (error) {
+    console.warn("Shipped email did not send.", error);
+  }
+}
+
 function editorCard(collection, item, index, schema) {
   const card = document.createElement("article");
   card.className = "editor-card";
@@ -1060,6 +1305,7 @@ function renderAll() {
   renderSiteFields();
   renderShippingFields();
   renderPaymentFields();
+  renderOrders();
   renderCollections();
   renderMediaLibrary();
   updateJsonEditor();
@@ -1085,6 +1331,7 @@ function renderSummary() {
   root.innerHTML = `
     <article><strong>${content.products.length}</strong><span>Products</span></article>
     <article><strong>${featuredCount}/${MAX_FEATURED_PRODUCTS}</strong><span>Featured</span></article>
+    <article><strong>${orders.length}</strong><span>Orders</span></article>
     <article><strong>${mediaAssets.length}</strong><span>Media</span></article>
     <article><strong>${content.references.length}</strong><span>References</span></article>
     <article><strong>${content.posts.length}</strong><span>Blog posts</span></article>
@@ -1126,6 +1373,11 @@ function setupActions() {
     window.BeyondPepsSupabase?.clearSession();
     setAdminLocked("Signed out. Sign in with an admin account to continue.");
     toast("Signed out.");
+  });
+  document.querySelector("#refreshOrders")?.addEventListener("click", async () => {
+    await loadAdminOrders();
+    toast("Orders refreshed.");
+    renderAll();
   });
   document.querySelectorAll("[data-add]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1253,6 +1505,7 @@ requireAdmin().then(async (allowed) => {
   const data = await loadContent();
   content = normalizeContent(data);
   await loadMediaAssets();
+  await loadAdminOrders();
   setupTabs();
   setupActions();
   renderAll();
