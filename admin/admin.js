@@ -26,7 +26,6 @@ const siteSchema = [
   ["blogHeroImageUrl", "Blog hero image URL", "image", "blog"],
   ["primaryCta", "Primary CTA"],
   ["secondaryCta", "Secondary CTA"],
-  ["shippingMethods", "Shippo shipping methods", "shipping_methods"],
   ["disclaimer", "Footer disclaimer", "textarea"]
 ];
 
@@ -600,6 +599,15 @@ function renderSiteFields() {
   });
 }
 
+function renderShippingFields() {
+  const root = document.querySelector("#shippingFields");
+  if (!root) return;
+  root.innerHTML = "";
+  root.append(field("Shippo shipping methods", content.site.shippingMethods, (value) => {
+    content.site.shippingMethods = normalizeShippingMethods(value);
+  }, "shipping_methods"));
+}
+
 function renderCollection(collection, rootSelector, schema) {
   const root = document.querySelector(rootSelector);
   root.innerHTML = "";
@@ -678,6 +686,7 @@ function renderAll() {
   renderBackendStatus();
   renderSummary();
   renderSiteFields();
+  renderShippingFields();
   renderCollections();
   renderMediaLibrary();
   updateJsonEditor();
