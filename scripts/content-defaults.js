@@ -321,7 +321,9 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "summary": "A practical look at labels, cold storage, staging trays, and the small habits that reduce mistakes.",
       "imageUrl": "/assets/hero-liquid-lab.png",
       "heroImageUrl": "/assets/hero-liquid-lab.png",
-      "status": "Draft"
+      "status": "Draft",
+      "slug": "building-a-better-peptide-supply-station",
+      "body": "<p>A practical look at labels, cold storage, staging trays, and the small habits that reduce mistakes.</p>"
     },
     {
       "title": "Why Calculators Need Context",
@@ -329,7 +331,9 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "summary": "The math is only useful when paired with clear units, documentation, and professional guidance.",
       "imageUrl": "/assets/hero-liquid-lab.png",
       "heroImageUrl": "/assets/hero-liquid-lab.png",
-      "status": "Draft"
+      "status": "Draft",
+      "slug": "why-calculators-need-context",
+      "body": "<p>The math is only useful when paired with clear units, documentation, and professional guidance.</p>"
     }
   ]
 };

@@ -140,8 +140,9 @@ function stockLabel(stockLevel) {
 }
 
 function renderPostCard(post, wide = false) {
+  const id = post.id || post.slug || slugify(post.title || "post");
   return `
-    <article class="${wide ? "wide-card " : ""}post-card">
+    <a class="${wide ? "wide-card " : ""}post-card post-card-link" href="post.html?id=${encodeURIComponent(id)}" aria-label="Read ${escapeHtml(post.title || "blog post")}">
       ${imageMarkup(post.imageUrl || post.heroImageUrl, post.title || "Blog image", "card-image post-image")}
       <div class="post-topline">
         <span>${escapeHtml(post.date || "")}</span>
@@ -149,8 +150,17 @@ function renderPostCard(post, wide = false) {
       </div>
       <h3>${escapeHtml(post.title || "Untitled post")}</h3>
       <p>${escapeHtml(post.summary || "")}</p>
-    </article>
+      <span class="read-more">Read post</span>
+    </a>
   `;
+}
+
+function slugify(value) {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || `post-${Date.now()}`;
 }
 
 function renderProducts(products = []) {
@@ -190,13 +200,16 @@ function renderReferences(references = []) {
 function renderPosts(posts = []) {
   const grid = document.querySelector("#postGrid");
   if (!grid) return;
-  grid.innerHTML = posts.map((post) => renderPostCard(post)).join("");
+  grid.innerHTML = posts.filter(isPublished).map((post) => renderPostCard(post)).join("");
 }
 
 function renderPostList(posts = []) {
   const list = document.querySelector("#postList");
   if (!list) return;
-  list.innerHTML = posts.map((post) => renderPostCard(post, true)).join("");
+  const published = posts.filter(isPublished);
+  list.innerHTML = published.length
+    ? published.map((post) => renderPostCard(post, true)).join("")
+    : `<p class="empty-state">No published blog posts yet.</p>`;
 }
 
 function applyPageMedia(content) {

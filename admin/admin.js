@@ -877,12 +877,14 @@ function renderCollections() {
   ]);
 
   renderCollection("posts", "#postsEditor", [
+    ["slug", "Slug"],
     ["title", "Title"],
     ["date", "Date"],
     ["status", "Status"],
     ["imageUrl", "Blog card image", "image", true, "blog"],
     ["heroImageUrl", "Blog post hero image", "image", true, "blog"],
-    ["summary", "Summary", "textarea", true]
+    ["summary", "Summary", "textarea", true],
+    ["body", "Blog post body", "richtext", true]
   ]);
 }
 
@@ -968,7 +970,7 @@ function setupActions() {
       const templates = {
         products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, status: "Draft", featured: false, imageUrl: "", galleryImages: [], summary: "", description: "" },
         references: { slug: `reference-${Date.now()}`, title: "New reference", type: "Guide", status: "Published", summary: "", body: "" },
-        posts: { title: "New post", date: new Date().toISOString().slice(0, 10), status: "Draft", imageUrl: "", heroImageUrl: "", summary: "" }
+        posts: { slug: `post-${Date.now()}`, title: "New post", date: new Date().toISOString().slice(0, 10), status: "Draft", imageUrl: "", heroImageUrl: "", summary: "", body: "" }
       };
       content[collection].push(templates[collection]);
       if (collection === "products") activeProductIndex = content.products.length - 1;

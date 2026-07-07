@@ -277,12 +277,14 @@ img {
 }
 
 .product-card-link,
-.reference-card-link {
+.reference-card-link,
+.post-card-link {
   transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
 
 .product-card-link:hover,
-.reference-card-link:hover {
+.reference-card-link:hover,
+.post-card-link:hover {
   transform: translateY(-3px);
   border-color: var(--line-strong);
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.52), 0 0 36px rgba(66, 228, 255, 0.12);

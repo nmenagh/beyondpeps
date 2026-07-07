@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blog Post | Beyond Peps</title>
+    <link rel="icon" type="image/png" href="/assets/bp-logo-mark.png">
+    <link rel="apple-touch-icon" href="/assets/bp-logo-mark.png">
+    <meta name="description" content="Beyond Peps blog post.">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Beyond Peps home">
+        <span class="brand-mark"><img src="/assets/bp-logo-mark.png" alt="" aria-hidden="true"></span>
+        <span>Beyond Peps</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="primaryNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="nav-links" id="primaryNav" aria-label="Primary navigation">
+        <a href="shop.html">Shop</a>
+        <a href="references.html">References</a>
+        <a href="calculators.html">Calculators</a>
+        <a class="is-active" href="blog.html">Blog</a>
+        <a href="cart.html">Cart <span data-cart-count>0</span></a>
+      </nav>
+      <a class="admin-link account-pill" href="account.html" data-account-pill>Login</a>
+    </header>
+
+    <main>
+      <section class="page-hero image-page-hero post-detail-hero" id="postHero">
+        <p class="eyebrow" id="postDate">Blog</p>
+        <h1 id="postTitle">Blog post</h1>
+        <p id="postSummary">Loading post...</p>
+      </section>
+
+      <section class="section page-section reference-detail-layout">
+        <article class="glass-panel reference-detail-card">
+          <div class="rich-content" id="postBody"></div>
+          <div class="inline-actions">
+            <a class="button ghost" href="blog.html">Back to blog</a>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p data-content="site.disclaimer">Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.</p>
+      <span>© 2026 Beyond Peps</span>
+    </footer>
+    <script src="scripts/content-defaults.js"></script>
+    <script src="scripts/supabase-env.js"></script>
+    <script src="scripts/supabase-api.js"></script>
+    <script src="scripts/cart.js"></script>
+    <script src="scripts/site.js"></script>
+    <script src="scripts/post-page.js"></script>
+  </body>
+</html>

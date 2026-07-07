@@ -126,9 +126,12 @@
 
   function postFromDb(post) {
     return {
+      id: post.slug || post.id,
+      slug: post.slug || post.id,
       title: post.title,
       date: (post.published_at || post.created_at || "").slice(0, 10),
       summary: post.summary || "",
+      body: post.body || post.summary || "",
       imageUrl: post.image_url || "",
       heroImageUrl: post.hero_image_url || post.image_url || "",
       status: dbStatusToUi(post.status)
@@ -153,6 +156,7 @@
       slug: slugify(post.title || "untitled-post"),
       title: post.title || "Untitled post",
       summary: post.summary || "",
+      body: post.body || post.summary || "",
       image_url: post.imageUrl || null,
       hero_image_url: post.heroImageUrl || post.imageUrl || null,
       status,
