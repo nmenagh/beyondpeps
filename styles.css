@@ -1057,6 +1057,16 @@ output {
   margin: 0;
 }
 
+.zelle-qr-code {
+  width: min(220px, 100%);
+  aspect-ratio: 1;
+  object-fit: contain;
+  padding: 0.65rem;
+  border: 1px solid rgba(188, 244, 255, 0.22);
+  border-radius: var(--radius);
+  background: #ffffff;
+}
+
 .zelle-instructions dl div {
   display: flex;
   justify-content: space-between;
@@ -1074,6 +1084,10 @@ output {
   color: #ffffff;
   font-weight: 800;
   text-align: right;
+}
+
+.zelle-instructions dd a {
+  color: var(--mint);
 }
 
 .empty-state {

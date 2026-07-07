@@ -70,6 +70,8 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
         "recipientName": "",
         "recipientEmail": "",
         "recipientPhone": "",
+        "paymentLink": "",
+        "qrCodeImageUrl": "",
         "memoInstructions": "Include your order number in the Zelle memo.",
         "confirmationIntro": "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
       }

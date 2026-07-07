@@ -103,6 +103,8 @@
         recipientName: zelle.recipientName || "",
         recipientEmail: zelle.recipientEmail || "",
         recipientPhone: zelle.recipientPhone || "",
+        paymentLink: zelle.paymentLink || "",
+        qrCodeImageUrl: zelle.qrCodeImageUrl || "",
         memoInstructions: zelle.memoInstructions || "Include your order number in the Zelle memo.",
         confirmationIntro: zelle.confirmationIntro || "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
       }
@@ -201,14 +203,21 @@
       zelle.recipientName ? ["Name", zelle.recipientName] : null,
       zelle.recipientEmail ? ["Email", zelle.recipientEmail] : null,
       zelle.recipientPhone ? ["Phone", zelle.recipientPhone] : null,
+      zelle.paymentLink ? ["Payment link", zelle.paymentLink] : null,
       ["Memo", order.paymentReference || order.orderNumber || ""]
     ].filter(Boolean);
 
     return `
       <div class="cart-message zelle-instructions">
         <strong>${escapeHtml(zelle.confirmationIntro || "Send your Zelle payment using the details below.")}</strong>
+        ${zelle.qrCodeImageUrl ? `<img class="zelle-qr-code" src="${escapeHtml(zelle.qrCodeImageUrl)}" alt="Zelle QR code">` : ""}
         <dl>
-          ${details.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}
+          ${details.map(([label, value]) => `
+            <div>
+              <dt>${escapeHtml(label)}</dt>
+              <dd>${label === "Payment link" ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener">Open Zelle payment link</a>` : escapeHtml(value)}</dd>
+            </div>
+          `).join("")}
         </dl>
         <p>${escapeHtml(zelle.memoInstructions || "Include your order number in the Zelle memo.")}</p>
       </div>

@@ -320,6 +320,8 @@ function normalizePaymentMethods(value = {}) {
       recipientName: zelle.recipientName || "",
       recipientEmail: zelle.recipientEmail || "",
       recipientPhone: zelle.recipientPhone || "",
+      paymentLink: zelle.paymentLink || "",
+      qrCodeImageUrl: zelle.qrCodeImageUrl || "",
       memoInstructions: zelle.memoInstructions || "Include your order number in the Zelle memo.",
       confirmationIntro: zelle.confirmationIntro || "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
     }
@@ -344,6 +346,7 @@ function mediaAssetsFromContent(data) {
     (product.galleryImages || []).forEach((url) => urls.add(url));
   });
   if (data.site?.blogHeroImageUrl) urls.add(data.site.blogHeroImageUrl);
+  if (data.site?.paymentMethods?.zelle?.qrCodeImageUrl) urls.add(data.site.paymentMethods.zelle.qrCodeImageUrl);
   (data.posts || []).forEach((post) => {
     if (post.imageUrl) urls.add(post.imageUrl);
     if (post.heroImageUrl) urls.add(post.heroImageUrl);
@@ -554,6 +557,16 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       onInput(settings);
       return true;
     }, "tel");
+    const paymentLink = field("Zelle payment link", zelle.paymentLink, (next) => {
+      zelle.paymentLink = next;
+      onInput(settings);
+      return true;
+    }, "url", true);
+    const qrCodeImageUrl = field("Zelle QR code image", zelle.qrCodeImageUrl, (next) => {
+      zelle.qrCodeImageUrl = next;
+      onInput(settings);
+      return true;
+    }, "image", true, "payments");
     const memoInstructions = field("Memo instructions", zelle.memoInstructions, (next) => {
       zelle.memoInstructions = next;
       onInput(settings);
@@ -565,7 +578,7 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       return true;
     }, "textarea", true);
 
-    panel.append(heading, enabled, displayName, recipientName, recipientEmail, recipientPhone, memoInstructions, confirmationIntro);
+    panel.append(heading, enabled, displayName, recipientName, recipientEmail, recipientPhone, paymentLink, qrCodeImageUrl, memoInstructions, confirmationIntro);
     return panel;
   }
 

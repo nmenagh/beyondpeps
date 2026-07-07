@@ -36,8 +36,10 @@ function zelleDetails(settings = {}, order = {}) {
       ${zelle.recipientName ? `<li><strong>Name:</strong> ${escapeHtml(zelle.recipientName)}</li>` : ""}
       ${zelle.recipientEmail ? `<li><strong>Email:</strong> ${escapeHtml(zelle.recipientEmail)}</li>` : ""}
       ${zelle.recipientPhone ? `<li><strong>Phone:</strong> ${escapeHtml(zelle.recipientPhone)}</li>` : ""}
+      ${zelle.paymentLink ? `<li><strong>Payment link:</strong> <a href="${escapeHtml(zelle.paymentLink)}">Open Zelle payment link</a></li>` : ""}
       <li><strong>Memo:</strong> ${escapeHtml(order.paymentReference || order.orderNumber || "")}</li>
     </ul>
+    ${zelle.qrCodeImageUrl ? `<p><img src="${escapeHtml(zelle.qrCodeImageUrl)}" alt="Zelle QR code" width="220" style="display:block;max-width:220px;border:1px solid #d8e7ea;border-radius:12px;padding:8px"></p>` : ""}
     <p>${escapeHtml(zelle.memoInstructions || "Include your order number in the Zelle memo.")}</p>
   `;
 }
