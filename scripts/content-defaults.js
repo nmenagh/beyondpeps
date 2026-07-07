@@ -10,7 +10,51 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
     "blogHeroImageUrl": "/assets/hero-liquid-lab.png",
     "primaryCta": "Shop research supplies",
     "secondaryCta": "Explore references",
+    "homeFeaturedEyebrow": "Research catalog",
+    "homeFeaturedTitle": "Featured products",
+    "homeFeaturedBody": "A focused look at the three research supplies currently featured by Beyond Peps.",
+    "homeReferencesEyebrow": "Reference library",
+    "homeReferencesTitle": "Clear educational material beside the products.",
+    "homeReferencesBody": "References are editable in the admin panel and designed to support calculators, product education, and blog posts.",
+    "homeCalculatorsEyebrow": "Calculators",
+    "homeCalculatorsTitle": "Research math tools with a cleaner interface.",
+    "homeCalculatorsBody": "The calculator page now includes a peptide unit planner and a GLP half-life estimator styled for the Beyond Peps research workflow.",
+    "homeBlogEyebrow": "Journal",
+    "homeBlogTitle": "Blog drafts",
+    "homeBlogBody": "Use the admin panel to develop posts before publishing them into the storefront.",
     "disclaimer": "Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.",
+    "pages": {
+      "shop": {
+        "eyebrow": "Research catalog",
+        "title": "Shop the launch collection.",
+        "body": "Products are staged for review while payment and fulfillment options are connected. The admin panel controls this catalog."
+      },
+      "references": {
+        "eyebrow": "Reference library",
+        "title": "Educational context without the noise.",
+        "body": "Guides and checklists live here so shoppers can understand units, storage, labels, and workflow basics before using calculators or research supplies."
+      },
+      "calculators": {
+        "eyebrow": "Calculators",
+        "title": "Research calculators for measured planning.",
+        "body": "Use these tools for educational research planning, unit conversion, and simplified half-life visualization. They are not medical advice."
+      },
+      "blog": {
+        "eyebrow": "Journal",
+        "title": "Notes for cleaner supply workflows.",
+        "body": "Drafts and published posts are managed from the admin panel. This page is ready to become the editorial side of Beyond Peps."
+      },
+      "cart": {
+        "eyebrow": "Cart",
+        "title": "Review your research supply cart.",
+        "body": "Payment options are coming next. For now, this cart prepares the storefront flow and keeps selected items in your browser."
+      },
+      "account": {
+        "eyebrow": "Account",
+        "title": "Save your address for easier checkout.",
+        "body": "Sign in to store shipping and billing details securely in your Beyond Peps account."
+      }
+    },
     "shippingMethods": {
       "enabledServicelevels": [
         "usps_ground_advantage",

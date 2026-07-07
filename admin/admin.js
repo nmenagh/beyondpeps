@@ -16,17 +16,11 @@ let content = null;
 let adminAllowed = false;
 let mediaAssets = [];
 let activeProductIndex = null;
+let activeSiteCopyPageId = null;
 
 const siteSchema = [
   ["name", "Site name"],
   ["domain", "Domain"],
-  ["announcement", "Announcement", "textarea"],
-  ["heroEyebrow", "Hero eyebrow"],
-  ["heroTitle", "Hero title", "textarea"],
-  ["heroBody", "Hero body", "textarea"],
-  ["blogHeroImageUrl", "Blog hero image URL", "image", "blog"],
-  ["primaryCta", "Primary CTA"],
-  ["secondaryCta", "Secondary CTA"],
   ["disclaimer", "Footer disclaimer", "textarea"]
 ];
 
@@ -42,6 +36,101 @@ const productSchema = [
   ["galleryImages", "Product gallery images", "gallery", true, "products"],
   ["summary", "Card summary", "textarea", true],
   ["description", "Extended product description", "textarea", true]
+];
+
+const pageCopyConfig = [
+  {
+    id: "home",
+    title: "Home",
+    summary: "Hero, CTAs, announcement, and home section headings.",
+    fields: [
+      ["site.heroEyebrow", "Hero eyebrow"],
+      ["site.heroTitle", "Hero title", "textarea"],
+      ["site.heroBody", "Hero body", "textarea"],
+      ["site.primaryCta", "Primary CTA"],
+      ["site.secondaryCta", "Secondary CTA"],
+      ["site.announcement", "Announcement", "textarea"],
+      ["site.homeFeaturedEyebrow", "Featured products eyebrow"],
+      ["site.homeFeaturedTitle", "Featured products title", "textarea"],
+      ["site.homeFeaturedBody", "Featured products body", "textarea"],
+      ["site.homeReferencesEyebrow", "References eyebrow"],
+      ["site.homeReferencesTitle", "References title", "textarea"],
+      ["site.homeReferencesBody", "References body", "textarea"],
+      ["site.homeCalculatorsEyebrow", "Calculators eyebrow"],
+      ["site.homeCalculatorsTitle", "Calculators title", "textarea"],
+      ["site.homeCalculatorsBody", "Calculators body", "textarea"],
+      ["site.homeBlogEyebrow", "Blog eyebrow"],
+      ["site.homeBlogTitle", "Blog title", "textarea"],
+      ["site.homeBlogBody", "Blog body", "textarea"]
+    ]
+  },
+  {
+    id: "shop",
+    title: "Shop",
+    summary: "Shop page hero eyebrow, title, and intro copy.",
+    fields: [
+      ["site.pages.shop.eyebrow", "Eyebrow"],
+      ["site.pages.shop.title", "Title", "textarea"],
+      ["site.pages.shop.body", "Body", "textarea"]
+    ]
+  },
+  {
+    id: "references",
+    title: "References",
+    summary: "Reference library page hero copy.",
+    fields: [
+      ["site.pages.references.eyebrow", "Eyebrow"],
+      ["site.pages.references.title", "Title", "textarea"],
+      ["site.pages.references.body", "Body", "textarea"]
+    ]
+  },
+  {
+    id: "calculators",
+    title: "Calculators",
+    summary: "Calculator page hero copy.",
+    fields: [
+      ["site.pages.calculators.eyebrow", "Eyebrow"],
+      ["site.pages.calculators.title", "Title", "textarea"],
+      ["site.pages.calculators.body", "Body", "textarea"]
+    ]
+  },
+  {
+    id: "blog",
+    title: "Blog",
+    summary: "Blog page hero copy and hero image.",
+    fields: [
+      ["site.pages.blog.eyebrow", "Eyebrow"],
+      ["site.pages.blog.title", "Title", "textarea"],
+      ["site.pages.blog.body", "Body", "textarea"],
+      ["site.blogHeroImageUrl", "Blog hero image", "image", true, "blog"]
+    ]
+  },
+  {
+    id: "cart",
+    title: "Cart",
+    summary: "Cart page hero copy.",
+    fields: [
+      ["site.pages.cart.eyebrow", "Eyebrow"],
+      ["site.pages.cart.title", "Title", "textarea"],
+      ["site.pages.cart.body", "Body", "textarea"]
+    ]
+  },
+  {
+    id: "account",
+    title: "Account",
+    summary: "Account page hero copy.",
+    fields: [
+      ["site.pages.account.eyebrow", "Eyebrow"],
+      ["site.pages.account.title", "Title", "textarea"],
+      ["site.pages.account.body", "Body", "textarea"]
+    ]
+  },
+  {
+    id: "global",
+    title: "Global",
+    summary: "Site name, domain, and footer disclaimer.",
+    fields: siteSchema.map(([key, label, type]) => [`site.${key}`, label, type])
+  }
 ];
 
 async function loadContent() {
@@ -171,8 +260,14 @@ function slugify(value) {
 }
 
 function normalizeContent(data) {
+  const defaults = cloneDefaultContent();
   data.site = {
+    ...defaults.site,
     ...data.site,
+    pages: {
+      ...(defaults.site?.pages || {}),
+      ...(data.site?.pages || {})
+    },
     shippingMethods: normalizeShippingMethods(data.site?.shippingMethods)
   };
   data.products = (data.products || []).map((product) => ({
@@ -188,6 +283,20 @@ function normalizeContent(data) {
     body: reference.body || reference.summary || ""
   }));
   return data;
+}
+
+function valueAtPath(source, path) {
+  return path.split(".").reduce((value, key) => value?.[key], source);
+}
+
+function setValueAtPath(source, path, value) {
+  const parts = path.split(".");
+  const last = parts.pop();
+  const target = parts.reduce((node, key) => {
+    if (!node[key] || typeof node[key] !== "object") node[key] = {};
+    return node[key];
+  }, source);
+  target[last] = value;
 }
 
 function normalizeShippingMethods(value = {}) {
@@ -607,11 +716,56 @@ function escapeAttribute(value = "") {
 function renderSiteFields() {
   const root = document.querySelector("#siteFields");
   root.innerHTML = "";
-  siteSchema.forEach(([key, label, type, uploadFolder]) => {
-    root.append(field(label, content.site[key], (value) => {
-      content.site[key] = value;
-    }, type || "text", key === "domain" ? false : type === "textarea", uploadFolder));
+
+  const activePage = pageCopyConfig.find((page) => page.id === activeSiteCopyPageId);
+  if (activePage) {
+    const back = document.createElement("button");
+    back.className = "button ghost product-back";
+    back.type = "button";
+    back.textContent = "Back to page tiles";
+    back.addEventListener("click", () => {
+      activeSiteCopyPageId = null;
+      renderAll();
+    });
+
+    const card = document.createElement("article");
+    card.className = "editor-card page-copy-editor";
+    const title = document.createElement("h2");
+    title.textContent = activePage.title;
+    card.append(title);
+
+    activePage.fields.forEach(([path, label, type, wide, uploadFolder]) => {
+      card.append(field(label, valueAtPath(content, path), (value) => {
+        setValueAtPath(content, path, value);
+        return true;
+      }, type || "text", wide || type === "textarea", uploadFolder));
+    });
+
+    root.append(back, card);
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "page-copy-grid";
+  pageCopyConfig.forEach((page) => {
+    const tile = document.createElement("button");
+    tile.className = "page-copy-tile";
+    tile.type = "button";
+    tile.innerHTML = `
+      <span class="page-copy-index">${escapeAttribute(page.title.slice(0, 2).toUpperCase())}</span>
+      <span class="page-copy-text">
+        <strong>${escapeAttribute(page.title)}</strong>
+        <small>${escapeAttribute(page.summary)}</small>
+      </span>
+    `;
+    tile.addEventListener("click", () => {
+      activeSiteCopyPageId = page.id;
+      renderAll();
+    });
+    grid.append(tile);
   });
+
+  root.append(grid);
 }
 
 function renderShippingFields() {

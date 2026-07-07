@@ -281,6 +281,72 @@ button {
   justify-self: start;
 }
 
+.page-copy-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.85rem;
+}
+
+.page-copy-tile {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: center;
+  min-height: 7rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(101, 255, 200, 0.13), transparent 10rem),
+    var(--panel-strong);
+  color: var(--text);
+  text-align: left;
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.page-copy-tile:hover,
+.page-copy-tile:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--line-strong);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42), 0 0 24px rgba(101, 255, 200, 0.1);
+  outline: none;
+}
+
+.page-copy-index {
+  width: 3rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(101, 255, 200, 0.34);
+  border-radius: 999px;
+  background: rgba(101, 255, 200, 0.1);
+  color: var(--mint);
+  font-size: 0.82rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.page-copy-text {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.page-copy-text strong {
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.page-copy-text small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.page-copy-editor {
+  grid-column: 1 / -1;
+}
+
 .admin-field {
   display: grid;
   gap: 0.55rem;
