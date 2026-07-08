@@ -217,22 +217,17 @@
     return values.map((value) => encodeURIComponent(`"${String(value).replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"`)).join(",");
   }
 
-  function makeUniqueSlugRows(rows = [], sourceItems = [], sourceKey = "id") {
-    const seen = new Set();
-    return rows.map((row, index) => {
-      const base = slugify(row.slug || row.title || row.name || `item-${index + 1}`);
-      let slug = base;
-      let suffix = 2;
-      while (seen.has(slug)) {
-        slug = `${base}-${suffix}`;
-        suffix += 1;
-      }
-      seen.add(slug);
-      if (sourceItems[index] && sourceItems[index][sourceKey] !== undefined) {
-        sourceItems[index][sourceKey] = slug;
-      }
-      return { ...row, slug };
+  function collapseDuplicateSlugRows(rows = []) {
+    const bySlug = new Map();
+    rows.forEach((row) => {
+      const slug = row.slug || slugify(row.title || row.name || `item-${bySlug.size + 1}`);
+      const key = String(row.title || row.name || slug).trim().toLowerCase() || String(slug).toLowerCase().replace(/-\d+$/, "");
+      const existing = bySlug.get(key);
+      bySlug.set(key, existing
+        ? { ...existing, ...row, slug: existing.slug, sort_order: existing.sort_order }
+        : { ...row, slug });
     });
+    return [...bySlug.values()];
   }
 
   async function deleteMissingReferences(slugs = []) {
@@ -288,7 +283,7 @@
       body: [{ key: "home", value: content.site }]
     });
 
-    const productRows = makeUniqueSlugRows(content.products.map(productToDb), content.products, "id");
+    const productRows = collapseDuplicateSlugRows(content.products.map(productToDb));
     await request("/rest/v1/products?on_conflict=slug", {
       method: "POST",
       prefer: "resolution=merge-duplicates,return=representation",
