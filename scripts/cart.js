@@ -47,6 +47,21 @@
     return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : null;
   }
 
+  function positiveNumberOrNull(value) {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? number : null;
+  }
+
+  function shippingProfile(product = {}) {
+    return {
+      mustShipSeparately: Boolean(product.mustShipSeparately),
+      packageLength: positiveNumberOrNull(product.packageLength),
+      packageWidth: positiveNumberOrNull(product.packageWidth),
+      packageHeight: positiveNumberOrNull(product.packageHeight),
+      packageWeight: positiveNumberOrNull(product.packageWeight)
+    };
+  }
+
   function localAvailability(items, productId, stockLevel) {
     const stock = normalizeStockLevel(stockLevel);
     if (stock === null) return Infinity;
@@ -92,6 +107,7 @@
     if (existing) {
       existing.quantity += allowedQuantity;
       existing.stockLevel = stockLevel;
+      Object.assign(existing, shippingProfile(product));
       existing.holdExpiresAt = holdExpiresAt();
     } else {
       items.push({
@@ -101,6 +117,7 @@
         imageUrl: product.imageUrl || "",
         quantity: allowedQuantity,
         stockLevel,
+        ...shippingProfile(product),
         holdExpiresAt: holdExpiresAt()
       });
     }

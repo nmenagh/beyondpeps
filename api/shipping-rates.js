@@ -44,10 +44,10 @@ function destinationAddress(address = {}) {
   };
 }
 
-function parcel(items = []) {
-  const quantity = items.reduce((sum, item) => sum + Math.max(0, Number(item.quantity || 0)), 0);
+function defaultParcel(quantity = 1) {
+  const count = Math.max(1, Number(quantity || 1));
   const defaultWeight = Number(env("SHIP_DEFAULT_WEIGHT_OZ", "8"));
-  const weight = Math.max(defaultWeight, defaultWeight * Math.max(1, quantity));
+  const weight = Math.max(defaultWeight, defaultWeight * count);
 
   return {
     length: env("SHIP_DEFAULT_LENGTH_IN", "10"),
@@ -57,6 +57,63 @@ function parcel(items = []) {
     weight: String(weight),
     mass_unit: "oz"
   };
+}
+
+function positiveNumber(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function productParcel(item = {}) {
+  const quantity = Math.max(1, Number(item.quantity || 1));
+  const fallback = defaultParcel(quantity);
+  const weight = positiveNumber(item.packageWeight, Number(fallback.weight)) * quantity;
+
+  return {
+    length: String(positiveNumber(item.packageLength, Number(fallback.length))),
+    width: String(positiveNumber(item.packageWidth, Number(fallback.width))),
+    height: String(positiveNumber(item.packageHeight, Number(fallback.height))),
+    distance_unit: "in",
+    weight: String(weight),
+    mass_unit: "oz"
+  };
+}
+
+function buildPackages(items = []) {
+  const packages = [];
+  const groupedItems = [];
+
+  items.forEach((item) => {
+    const quantity = Math.max(0, Number(item.quantity || 0));
+    if (!quantity) return;
+    if (item.mustShipSeparately) {
+      packages.push({
+        type: "separate",
+        label: item.name || item.id || "Separate package",
+        items: [{ id: item.id, quantity }],
+        parcel: productParcel(item)
+      });
+      return;
+    }
+    groupedItems.push(item);
+  });
+
+  const groupedQuantity = groupedItems.reduce((sum, item) => sum + Math.max(0, Number(item.quantity || 0)), 0);
+  if (groupedQuantity > 0) {
+    packages.unshift({
+      type: "grouped",
+      label: "Standard package",
+      items: groupedItems.map((item) => ({ id: item.id, quantity: Math.max(0, Number(item.quantity || 0)) })),
+      parcel: defaultParcel(groupedQuantity)
+    });
+  }
+
+  return packages.length ? packages : [{
+    type: "grouped",
+    label: "Standard package",
+    items: [],
+    parcel: defaultParcel(1)
+  }];
 }
 
 function normalizeRate(rate) {
@@ -88,6 +145,102 @@ function filterAllowedRates(rates = [], settings = {}) {
   return rates.filter((rate) => allowed.has(String(rate.servicelevelToken || "").toLowerCase()));
 }
 
+async function createShipment(token, addressTo, packageInfo) {
+  const shipmentResponse = await fetch(`${SHIPPO_API_BASE}/shipments/`, {
+    method: "POST",
+    headers: {
+      Authorization: `ShippoToken ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      address_from: originAddress(),
+      address_to: addressTo,
+      parcels: [packageInfo.parcel],
+      async: false
+    })
+  });
+
+  const shipment = await responseJson(shipmentResponse);
+  if (!shipmentResponse.ok) {
+    const error = new Error("Shippo could not calculate rates.");
+    error.statusCode = shipmentResponse.status;
+    error.detail = shipment;
+    throw error;
+  }
+
+  return {
+    ...packageInfo,
+    shipmentId: shipment.object_id,
+    rates: (shipment.rates || []).map(normalizeRate).filter((rate) => Number.isFinite(rate.amount))
+  };
+}
+
+function rateKey(rate = {}) {
+  return [rate.provider || "", rate.servicelevelToken || rate.servicelevel || ""].join("::").toLowerCase();
+}
+
+function combinePackageRates(packageRates = [], settings = {}) {
+  if (packageRates.length === 1) {
+    return filterAllowedRates(packageRates[0].rates, settings)
+      .map((rate) => ({
+        ...rate,
+        packageCount: 1,
+        packages: [{
+          label: packageRates[0].label,
+          shipmentId: packageRates[0].shipmentId,
+          rateId: rate.id,
+          amount: rate.amount,
+          provider: rate.provider,
+          servicelevel: rate.servicelevel,
+          servicelevelToken: rate.servicelevelToken
+        }]
+      }))
+      .sort((a, b) => a.amount - b.amount);
+  }
+
+  const allowedPackages = packageRates.map((packageInfo) => ({
+    ...packageInfo,
+    rates: filterAllowedRates(packageInfo.rates, settings)
+  }));
+  const firstRates = allowedPackages[0]?.rates || [];
+  const combined = [];
+
+  firstRates.forEach((firstRate) => {
+    const key = rateKey(firstRate);
+    const matches = allowedPackages.map((packageInfo) => {
+      const rate = packageInfo.rates.find((candidate) => rateKey(candidate) === key);
+      return rate ? { packageInfo, rate } : null;
+    });
+    if (matches.some((match) => !match)) return;
+
+    const amount = matches.reduce((sum, match) => sum + Number(match.rate.amount || 0), 0);
+    combined.push({
+      id: matches.map((match) => match.rate.id).join("|"),
+      provider: firstRate.provider,
+      servicelevel: firstRate.servicelevel,
+      servicelevelToken: firstRate.servicelevelToken,
+      amount: Number(amount.toFixed(2)),
+      currency: firstRate.currency || "USD",
+      estimatedDays: Math.max(...matches.map((match) => Number(match.rate.estimatedDays || 0))) || null,
+      durationTerms: firstRate.durationTerms || "",
+      arrivesBy: "",
+      attributes: firstRate.attributes || [],
+      packageCount: matches.length,
+      packages: matches.map((match) => ({
+        label: match.packageInfo.label,
+        shipmentId: match.packageInfo.shipmentId,
+        rateId: match.rate.id,
+        amount: match.rate.amount,
+        provider: match.rate.provider,
+        servicelevel: match.rate.servicelevel,
+        servicelevelToken: match.rate.servicelevelToken
+      }))
+    });
+  });
+
+  return combined.sort((a, b) => a.amount - b.amount);
+}
+
 function requestBody(request) {
   if (!request.body) return {};
   if (typeof request.body === "string") return JSON.parse(request.body || "{}");
@@ -114,36 +267,14 @@ module.exports = async function handler(request, response) {
   try {
     const token = required(env("SHIPPO_API_TOKEN"), "SHIPPO_API_TOKEN");
     const body = requestBody(request);
-    const shipmentResponse = await fetch(`${SHIPPO_API_BASE}/shipments/`, {
-      method: "POST",
-      headers: {
-        Authorization: `ShippoToken ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        address_from: originAddress(),
-        address_to: destinationAddress(body.address),
-        parcels: [parcel(body.items || [])],
-        async: false
-      })
-    });
-
-    const shipment = await responseJson(shipmentResponse);
-    if (!shipmentResponse.ok) {
-      json(response, shipmentResponse.status, {
-        error: "Shippo could not calculate rates.",
-        detail: shipment
-      });
-      return;
-    }
-
-    const rates = filterAllowedRates((shipment.rates || [])
-      .map(normalizeRate)
-      .filter((rate) => Number.isFinite(rate.amount))
-      .sort((a, b) => a.amount - b.amount), body.shippingMethods);
+    const addressTo = destinationAddress(body.address);
+    const packages = buildPackages(body.items || []);
+    const packageRates = await Promise.all(packages.map((packageInfo) => createShipment(token, addressTo, packageInfo)));
+    const rates = combinePackageRates(packageRates, body.shippingMethods);
 
     json(response, 200, {
-      shipmentId: shipment.object_id,
+      shipmentId: packageRates[0]?.shipmentId || "",
+      packageCount: packages.length,
       rates
     });
   } catch (error) {

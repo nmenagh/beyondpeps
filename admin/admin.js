@@ -39,6 +39,11 @@ const productSchema = [
   ["stockLevel", "Stock level", "number"],
   ["status", "Status"],
   ["featured", "Featured product", "checkbox"],
+  ["mustShipSeparately", "Must Ship Separately", "checkbox"],
+  ["packageLength", "Package length (in)", "number", false, "uploads", (item) => item.mustShipSeparately],
+  ["packageWidth", "Package width (in)", "number", false, "uploads", (item) => item.mustShipSeparately],
+  ["packageHeight", "Package height (in)", "number", false, "uploads", (item) => item.mustShipSeparately],
+  ["packageWeight", "Package weight (oz)", "number", false, "uploads", (item) => item.mustShipSeparately],
   ["imageUrl", "Product image", "image", true, "products"],
   ["galleryImages", "Product gallery images", "gallery", true, "products"],
   ["summary", "Card summary", "textarea", true],
@@ -413,7 +418,20 @@ function orderCustomerName(order = {}) {
 }
 
 function shippingLine(order = {}) {
-  return order.selected_carrier || [order.shipping_method?.provider, order.shipping_method?.servicelevel].filter(Boolean).join(" - ") || "Shipping method not selected";
+  const count = Number(order.shipping_method?.packageCount || order.shipping_method?.packages?.length || 0);
+  const suffix = count > 1 ? ` (${count} packages)` : "";
+  return `${order.selected_carrier || [order.shipping_method?.provider, order.shipping_method?.servicelevel].filter(Boolean).join(" - ") || "Shipping method not selected"}${suffix}`;
+}
+
+function orderLabels(order = {}) {
+  const labels = Array.isArray(order.shipping_method?.labels) ? order.shipping_method.labels : [];
+  if (labels.length) return labels;
+  return order.label_url ? [{
+    labelUrl: order.label_url,
+    trackingUrl: order.tracking_url || "",
+    trackingNumber: order.tracking_number || "",
+    packageNumber: 1
+  }] : [];
 }
 
 function cleanRichHtml(html = "") {
@@ -1061,6 +1079,7 @@ function renderOrderDetail(order) {
   const statusOptions = ORDER_STATUSES.map((status) => `<option value="${status}"${order.status === status ? " selected" : ""}>${status}</option>`).join("");
   const labelUrl = order.label_url || "";
   const trackingUrl = order.tracking_url || "";
+  const labels = orderLabels(order);
 
   card.innerHTML = `
     <div class="field-wide order-detail-header">
@@ -1095,8 +1114,17 @@ function renderOrderDetail(order) {
       <h3>Shipping</h3>
       <p>${escapeAttribute(shippingLine(order))}</p>
       <pre>${escapeAttribute(addressBlock(order.shipping_address))}</pre>
-      ${labelUrl ? `<p><a href="${escapeAttribute(labelUrl)}" target="_blank" rel="noopener">Open shipping label</a></p>` : ""}
-      ${trackingUrl ? `<p><a href="${escapeAttribute(trackingUrl)}" target="_blank" rel="noopener">Track package ${escapeAttribute(order.tracking_number || "")}</a></p>` : ""}
+      ${labels.map((label, index) => `
+        <p>
+          <span>Package ${escapeAttribute(label.packageNumber || index + 1)}</span>
+          <strong>
+            ${label.labelUrl ? `<a href="${escapeAttribute(label.labelUrl)}" target="_blank" rel="noopener">Open label</a>` : ""}
+            ${label.trackingUrl ? ` · <a href="${escapeAttribute(label.trackingUrl)}" target="_blank" rel="noopener">Track ${escapeAttribute(label.trackingNumber || "")}</a>` : ""}
+          </strong>
+        </p>
+      `).join("")}
+      ${!labels.length && labelUrl ? `<p><a href="${escapeAttribute(labelUrl)}" target="_blank" rel="noopener">Open shipping label</a></p>` : ""}
+      ${!labels.length && trackingUrl ? `<p><a href="${escapeAttribute(trackingUrl)}" target="_blank" rel="noopener">Track package ${escapeAttribute(order.tracking_number || "")}</a></p>` : ""}
       <button class="button primary" id="createShippoLabel" type="button">${labelUrl ? "Recheck label" : "Create Shippo label"}</button>
       <p class="admin-note" id="labelStatus"></p>
     </section>
@@ -1227,7 +1255,8 @@ function editorCard(collection, item, index, schema) {
   title.textContent = `${index + 1}. ${item.name || item.title || "Untitled"}`;
   card.append(title);
 
-  schema.forEach(([key, label, type, wide, uploadFolder]) => {
+  schema.forEach(([key, label, type, wide, uploadFolder, shouldShow]) => {
+    if (typeof shouldShow === "function" && !shouldShow(item)) return;
     card.append(field(label, item[key], (value) => {
       if (collection === "products" && key === "featured" && value && featuredProductCount(item) >= MAX_FEATURED_PRODUCTS) {
         toast(`Only ${MAX_FEATURED_PRODUCTS} products can be featured at a time.`);
@@ -1235,6 +1264,7 @@ function editorCard(collection, item, index, schema) {
       }
       item[key] = value;
       title.textContent = `${index + 1}. ${item.name || item.title || "Untitled"}`;
+      if (collection === "products" && key === "mustShipSeparately") renderAll();
       return true;
     }, type || "text", wide, uploadFolder));
   });
@@ -1476,7 +1506,7 @@ function setupActions() {
     button.addEventListener("click", () => {
       const collection = button.dataset.add;
       const templates = {
-        products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, status: "Draft", featured: false, imageUrl: "", galleryImages: [], summary: "", description: "" },
+        products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, status: "Draft", featured: false, mustShipSeparately: false, packageLength: null, packageWidth: null, packageHeight: null, packageWeight: null, imageUrl: "", galleryImages: [], summary: "", description: "" },
         references: { slug: `reference-${Date.now()}`, title: "New reference", type: "Guide", status: "Published", summary: "", body: "" },
         posts: { slug: `post-${Date.now()}`, title: "New post", date: new Date().toISOString().slice(0, 10), status: "Draft", imageUrl: "", heroImageUrl: "", summary: "", body: "" }
       };

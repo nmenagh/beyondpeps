@@ -73,7 +73,12 @@
       galleryImages: normalizeGalleryImages(product.gallery_image_urls || [], product.image_url || ""),
       tags: product.tags || [],
       featured: Boolean(product.featured),
-      stockLevel: product.inventory_count ?? null
+      stockLevel: product.inventory_count ?? null,
+      mustShipSeparately: Boolean(product.must_ship_separately),
+      packageLength: product.package_length_in ?? null,
+      packageWidth: product.package_width_in ?? null,
+      packageHeight: product.package_height_in ?? null,
+      packageWeight: product.package_weight_oz ?? null
     };
   }
 
@@ -94,8 +99,18 @@
       tags: Array.isArray(product.tags) ? product.tags : [],
       featured: Boolean(product.featured),
       inventory_count: Number.isFinite(Number(product.stockLevel)) ? Math.max(0, Math.floor(Number(product.stockLevel))) : null,
+      must_ship_separately: Boolean(product.mustShipSeparately),
+      package_length_in: positiveNumberOrNull(product.packageLength),
+      package_width_in: positiveNumberOrNull(product.packageWidth),
+      package_height_in: positiveNumberOrNull(product.packageHeight),
+      package_weight_oz: positiveNumberOrNull(product.packageWeight),
       sort_order: index * 10
     };
+  }
+
+  function positiveNumberOrNull(value) {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? number : null;
   }
 
   function referenceFromDb(reference) {

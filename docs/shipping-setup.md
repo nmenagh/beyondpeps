@@ -22,6 +22,6 @@ Recommended Vercel environment variables:
 - `SHIP_DEFAULT_WIDTH_IN`
 - `SHIP_DEFAULT_HEIGHT_IN`
 
-Until products have their own package weight and dimensions, rates use one configurable default parcel and multiply the default weight by cart quantity.
+Products can be marked `Must Ship Separately` in the admin product editor. When that is checked, enter package length, width, height, and weight using inches and ounces. Checkout calculates that product as its own Shippo package and combines matching service-level prices with the rest of the cart. Products without separate package data continue to use the configurable default parcel, with default weight multiplied by cart quantity.
 
 Shipping methods shown to customers are controlled in the admin panel under Site Content. The selected Shippo service-level tokens are sent to `/api/shipping-rates`, and the endpoint filters Shippo's returned rates before sending them back to the browser.

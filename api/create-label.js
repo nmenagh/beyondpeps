@@ -75,8 +75,37 @@ function rateIdFromOrder(order = {}) {
   return order.shippo_rate_id || order.shipping_method?.id || order.shipping_method?.object_id || "";
 }
 
+function rateIdsFromOrder(order = {}) {
+  const packages = Array.isArray(order.shipping_method?.packages) ? order.shipping_method.packages : [];
+  const packageRateIds = packages.map((packageInfo) => packageInfo.rateId || packageInfo.id).filter(Boolean);
+  if (packageRateIds.length) return packageRateIds;
+  const rateId = rateIdFromOrder(order);
+  return rateId ? String(rateId).split("|").filter(Boolean) : [];
+}
+
 function trackingUrl(transaction = {}) {
   return transaction.tracking_url_provider || transaction.tracking_url || transaction.object_tracking_url || "";
+}
+
+async function createTransaction(token, rateId) {
+  const shippoResponse = await fetch(`${SHIPPO_API_BASE}/transactions/`, {
+    method: "POST",
+    headers: {
+      Authorization: `ShippoToken ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      rate: rateId,
+      label_file_type: "PDF",
+      async: false
+    })
+  });
+
+  const transaction = await responseJson(shippoResponse);
+  if (!shippoResponse.ok || transaction.status === "ERROR") {
+    throw new Error(transaction.messages?.[0]?.text || transaction.message || "Shippo could not create the label.");
+  }
+  return transaction;
 }
 
 module.exports = async function handler(request, response) {
@@ -102,28 +131,25 @@ module.exports = async function handler(request, response) {
       return;
     }
 
-    const rateId = rateIdFromOrder(order);
-    if (!rateId) {
+    const rateIds = rateIdsFromOrder(order);
+    if (!rateIds.length) {
       throw new Error("This order does not have a stored Shippo rate id. Recalculate shipping before creating a label.");
     }
 
-    const shippoResponse = await fetch(`${SHIPPO_API_BASE}/transactions/`, {
-      method: "POST",
-      headers: {
-        Authorization: `ShippoToken ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        rate: rateId,
-        label_file_type: "PDF",
-        async: false
-      })
-    });
-
-    const transaction = await responseJson(shippoResponse);
-    if (!shippoResponse.ok || transaction.status === "ERROR") {
-      throw new Error(transaction.messages?.[0]?.text || transaction.message || "Shippo could not create the label.");
+    const transactions = [];
+    for (const rateId of rateIds) {
+      transactions.push(await createTransaction(token, rateId));
     }
+
+    const transaction = transactions[0] || {};
+    const labels = transactions.map((item, index) => ({
+      labelUrl: item.label_url || "",
+      trackingNumber: item.tracking_number || "",
+      trackingUrl: trackingUrl(item),
+      trackingCarrier: item.tracking_carrier || "",
+      transactionId: item.object_id || "",
+      packageNumber: index + 1
+    }));
 
     const selectedCarrier = order.selected_carrier || [order.shipping_method?.provider, order.shipping_method?.servicelevel].filter(Boolean).join(" - ");
     const updated = await supabaseRequest(`/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
@@ -131,9 +157,13 @@ module.exports = async function handler(request, response) {
       token: adminToken,
       body: {
         status: "fulfilled",
-        shippo_transaction_id: transaction.object_id || null,
+        shipping_method: {
+          ...(order.shipping_method || {}),
+          labels
+        },
+        shippo_transaction_id: transactions.map((item) => item.object_id).filter(Boolean).join(",") || null,
         label_url: transaction.label_url || null,
-        tracking_number: transaction.tracking_number || null,
+        tracking_number: labels.map((item) => item.trackingNumber).filter(Boolean).join(", ") || null,
         tracking_url: trackingUrl(transaction) || null,
         tracking_carrier: transaction.tracking_carrier || order.tracking_carrier || null,
         shipping_provider: order.shipping_provider || order.shipping_method?.provider || selectedCarrier || null,
@@ -145,8 +175,10 @@ module.exports = async function handler(request, response) {
     json(response, 200, {
       order: updated?.[0] || order,
       transaction,
+      transactions,
+      labels,
       labelUrl: transaction.label_url || "",
-      trackingNumber: transaction.tracking_number || "",
+      trackingNumber: labels.map((item) => item.trackingNumber).filter(Boolean).join(", "),
       trackingUrl: trackingUrl(transaction)
     });
   } catch (error) {

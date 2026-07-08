@@ -121,9 +121,12 @@
   }
 
   function deliveryText(rate) {
-    if (rate.estimatedDays) return `${rate.estimatedDays} business day${rate.estimatedDays === 1 ? "" : "s"}`;
-    if (rate.durationTerms) return rate.durationTerms;
-    return "Delivery estimate unavailable";
+    const parts = [];
+    if (rate.packageCount > 1) parts.push(`${rate.packageCount} packages combined`);
+    if (rate.estimatedDays) parts.push(`${rate.estimatedDays} business day${rate.estimatedDays === 1 ? "" : "s"}`);
+    else if (rate.durationTerms) parts.push(rate.durationTerms);
+    else parts.push("Delivery estimate unavailable");
+    return parts.join(" · ");
   }
 
   function renderShippingForm(address, selectedRate, rates = [], message = "") {
