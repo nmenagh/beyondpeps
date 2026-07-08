@@ -3,6 +3,11 @@
   const SHIPPING_RATE_KEY = "beyondPepsShippingRate";
   const SHIPPING_RATES_KEY = "beyondPepsShippingRates";
   const PAYMENT_METHOD_KEY = "beyondPepsPaymentMethod";
+  let checkoutAddress = emptyShippingAddress();
+  let shippingRates = [];
+  let selectedShippingRate = null;
+  let shippingCalculationTimer = null;
+  let shippingCalculationSequence = 0;
   const US_STATES = [
     "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS",
     "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM",
@@ -50,12 +55,8 @@
     }
   }
 
-  function writeJson(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-
-  function readShippingAddress() {
-    return readJson(SHIPPING_ADDRESS_KEY, {
+  function emptyShippingAddress() {
+    return {
       name: "",
       street1: "",
       street2: "",
@@ -64,15 +65,63 @@
       zip: "",
       phone: "",
       email: ""
-    });
+    };
+  }
+
+  function readShippingAddress() {
+    return checkoutAddress;
   }
 
   function readShippingRate() {
-    return readJson(SHIPPING_RATE_KEY, null);
+    return selectedShippingRate;
   }
 
   function readShippingRates() {
-    return readJson(SHIPPING_RATES_KEY, []);
+    return shippingRates;
+  }
+
+  function setShippingRates(rates = [], selected = null) {
+    shippingRates = rates;
+    selectedShippingRate = selected;
+  }
+
+  function clearShippingRates() {
+    shippingCalculationSequence += 1;
+    setShippingRates();
+  }
+
+  function shippingAddressIsComplete(address = {}) {
+    const requiredFieldsComplete = ["name", "street1", "city", "state"].every((key) => String(address[key] || "").trim());
+    return requiredFieldsComplete && /^\d{5}(?:-\d{4})?$/.test(String(address.zip || "").trim());
+  }
+
+  function profileShippingAddress(user, profile) {
+    const address = profile?.shipping_address || {};
+    return {
+      name: address.name || profile?.full_name || user?.user_metadata?.full_name || "",
+      street1: address.line1 || address.street1 || "",
+      street2: address.line2 || address.street2 || "",
+      city: address.city || "",
+      state: address.state || "",
+      zip: address.postal || address.zip || "",
+      phone: address.phone || "",
+      email: user?.email || profile?.email || address.email || ""
+    };
+  }
+
+  async function initializeShippingAddress() {
+    localStorage.removeItem(SHIPPING_ADDRESS_KEY);
+    localStorage.removeItem(SHIPPING_RATE_KEY);
+    localStorage.removeItem(SHIPPING_RATES_KEY);
+
+    const user = await window.BeyondPepsSupabase.currentUser();
+    if (!user) {
+      checkoutAddress = emptyShippingAddress();
+      return;
+    }
+
+    const profile = await window.BeyondPepsSupabase.loadProfile();
+    checkoutAddress = profileShippingAddress(user, profile);
   }
 
   function readSiteContent() {
@@ -139,9 +188,9 @@
         <div class="shipping-heading">
           <div>
             <p class="eyebrow">Shipping</p>
-            <h2>Calculate delivery options</h2>
+            <h2>Delivery options</h2>
           </div>
-          ${selectedRate ? `<strong>${money(selectedRate.amount)}</strong>` : ""}
+          <strong id="shippingSelectedCost">${selectedRate ? money(selectedRate.amount) : ""}</strong>
         </div>
         <div class="shipping-form" id="shippingForm">
           <label class="field-wide">Ship-to name<input name="name" autocomplete="name" value="${escapeHtml(address.name)}" required></label>
@@ -153,8 +202,7 @@
           <label>Phone<input name="phone" autocomplete="tel" value="${escapeHtml(address.phone)}"></label>
           <label class="field-wide">Email<input name="email" autocomplete="email" value="${escapeHtml(address.email)}"></label>
         </div>
-        <button class="button primary" id="calculateShipping" type="button">Calculate shipping methods</button>
-        ${message ? `<p class="cart-message">${escapeHtml(message)}</p>` : ""}
+        <p class="cart-message" id="shippingRateStatus">${escapeHtml(message || (shippingAddressIsComplete(address) ? "Updating shipping methods..." : "Enter your shipping address to see available methods."))}</p>
         ${rates.length ? `
           <div class="shipping-rates" role="radiogroup" aria-label="Shipping methods">
             ${rates.map((rate) => `
@@ -230,8 +278,62 @@
   function collectShippingAddress() {
     const form = document.querySelector("#shippingForm");
     const data = Object.fromEntries([...form.querySelectorAll("input, select")].map((field) => [field.name, field.value.trim()]));
-    writeJson(SHIPPING_ADDRESS_KEY, data);
+    checkoutAddress = data;
     return data;
+  }
+
+  function scheduleShippingCalculation(delay = 500) {
+    window.clearTimeout(shippingCalculationTimer);
+    if (!window.BeyondPepsCart.readCart().length) return;
+    const address = readShippingAddress();
+    if (!shippingAddressIsComplete(address)) return;
+    shippingCalculationTimer = window.setTimeout(() => calculateShipping(), delay);
+  }
+
+  async function calculateShipping() {
+    const address = readShippingAddress();
+    if (!shippingAddressIsComplete(address)) {
+      clearShippingRates();
+      return;
+    }
+
+    const calculationSequence = ++shippingCalculationSequence;
+    const status = document.querySelector("#shippingRateStatus");
+    if (status) status.textContent = "Updating shipping methods...";
+
+    try {
+      const response = await fetch("/api/shipping-rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address,
+          items: window.BeyondPepsCart.readCart(),
+          shippingMethods: shippingMethodSettings()
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to calculate shipping.");
+      if (calculationSequence !== shippingCalculationSequence) return;
+
+      const rates = data.rates || [];
+      if (!rates.length) {
+        clearShippingRates();
+        await renderCart("No shipping methods were returned for that address.");
+        return;
+      }
+
+      const previousRate = readShippingRate();
+      const selected = rates.find((rate) =>
+        rate.provider === previousRate?.provider &&
+        rate.servicelevelToken === previousRate?.servicelevelToken
+      ) || rates[0];
+      setShippingRates(rates, selected);
+      await renderCart();
+    } catch (error) {
+      if (calculationSequence !== shippingCalculationSequence) return;
+      clearShippingRates();
+      await renderCart(error.message);
+    }
   }
 
   async function renderCart(message = "") {
@@ -273,8 +375,8 @@
       ${renderPaymentOptions(paymentSettings, selectedPaymentMethod)}
       <div class="glass-panel cart-summary-card">
         <div><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
-        <div><span>Shipping</span><strong>${selectedRate ? money(selectedRate.amount) : "Select method"}</strong></div>
-        <div class="summary-total"><span>Estimated total</span><strong>${money(total)}</strong></div>
+        <div><span>Shipping</span><strong id="summaryShippingCost">${selectedRate ? money(selectedRate.amount) : ""}</strong></div>
+        <div class="summary-total"><span>Estimated total</span><strong id="summaryEstimatedTotal">${money(total)}</strong></div>
         <p>Items added to cart are reserved for ${window.BeyondPepsCart.holdMinutes} minutes, then released if checkout is not completed.</p>
         ${message ? `<p class="cart-message">${escapeHtml(message)}</p>` : ""}
         <button class="button primary" id="checkoutCheck" type="button">Place order</button>
@@ -285,41 +387,30 @@
     document.querySelectorAll(".cart-item").forEach((row) => {
       row.querySelector(".cart-qty").addEventListener("change", async (event) => {
         window.BeyondPepsCart.updateItem(row.dataset.cartItem, Math.max(0, Number.parseInt(event.target.value, 10) || 0));
+        clearShippingRates();
         await renderCart();
+        scheduleShippingCalculation(0);
       });
     });
 
     document.querySelector("#shippingForm").addEventListener("input", () => {
       collectShippingAddress();
-      localStorage.removeItem(SHIPPING_RATE_KEY);
-      localStorage.removeItem(SHIPPING_RATES_KEY);
-    });
-
-    document.querySelector("#calculateShipping").addEventListener("click", async () => {
-      const button = document.querySelector("#calculateShipping");
-      const address = collectShippingAddress();
-      button.disabled = true;
-      button.textContent = "Calculating...";
-
-      try {
-        const response = await fetch("/api/shipping-rates", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address, items, shippingMethods: shippingMethodSettings() })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Unable to calculate shipping.");
-        const rates = data.rates || [];
-        if (!rates.length) {
-          await renderCart("No shipping methods were returned for that address.");
-          return;
-        }
-        writeJson(SHIPPING_RATES_KEY, rates);
-        writeJson(SHIPPING_RATE_KEY, rates[0]);
-        await renderCart("Choose your preferred shipping method.");
-      } catch (error) {
-        await renderCart(error.message);
+      clearShippingRates();
+      const shippingChoices = document.querySelector(".shipping-rates");
+      if (shippingChoices) shippingChoices.remove();
+      const shippingSelectedCost = document.querySelector("#shippingSelectedCost");
+      const summaryShippingCost = document.querySelector("#summaryShippingCost");
+      const summaryEstimatedTotal = document.querySelector("#summaryEstimatedTotal");
+      if (shippingSelectedCost) shippingSelectedCost.textContent = "";
+      if (summaryShippingCost) summaryShippingCost.textContent = "";
+      if (summaryEstimatedTotal) summaryEstimatedTotal.textContent = money(subtotal);
+      const status = document.querySelector("#shippingRateStatus");
+      if (status) {
+        status.textContent = shippingAddressIsComplete(checkoutAddress)
+          ? "Updating shipping methods..."
+          : "Enter your shipping address to see available methods.";
       }
+      scheduleShippingCalculation();
     });
 
     function attachShippingRateHandlers(rates = []) {
@@ -327,7 +418,7 @@
         input.addEventListener("change", async () => {
           const rate = rates.find((item) => item.id === input.value);
           if (rate) {
-            writeJson(SHIPPING_RATE_KEY, rate);
+            selectedShippingRate = rate;
             await renderCart();
           }
         });
@@ -378,8 +469,7 @@
 
         const emailResult = await sendOrderConfirmation(order, address, items, readShippingRate(), paymentSettings);
         window.BeyondPepsCart.clearCart();
-        localStorage.removeItem(SHIPPING_RATE_KEY);
-        localStorage.removeItem(SHIPPING_RATES_KEY);
+        clearShippingRates();
         const emailText = emailResult?.sent ? " A confirmation email has been sent." : " Email is not configured yet, so save these payment details.";
         await renderCart(`Order ${order.orderNumber} placed.${emailText}`);
         document.querySelector("#cartItems").innerHTML = `
@@ -433,6 +523,12 @@
     contentReady
       .catch((error) => console.warn("Cart content refresh unavailable.", error))
       .then(() => window.BeyondPepsCart.reserveCart())
-      .then(() => renderCart());
+      .then(() => initializeShippingAddress())
+      .catch((error) => {
+        console.warn("Account shipping address unavailable.", error);
+        checkoutAddress = emptyShippingAddress();
+      })
+      .then(() => renderCart())
+      .then(() => scheduleShippingCalculation(0));
   });
 })();
