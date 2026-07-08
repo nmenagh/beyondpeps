@@ -14,5 +14,11 @@ port = 54323
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:5173"
-additional_redirect_urls = ["https://beyondpeps.com"]
+site_url = "https://beyondpeps.vercel.app"
+additional_redirect_urls = [
+  "https://beyondpeps.vercel.app/account.html",
+  "https://beyondpeps.com",
+  "https://beyondpeps.com/account.html",
+  "https://www.beyondpeps.com",
+  "https://www.beyondpeps.com/account.html"
+]

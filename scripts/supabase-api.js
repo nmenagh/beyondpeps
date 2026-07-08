@@ -459,7 +459,12 @@
     }
 
     const { url, anonKey } = config();
-    const response = await fetch(`${url.replace(/\/$/, "")}/auth/v1/signup`, {
+    const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    const siteOrigin = isLocalHost ? "https://beyondpeps.vercel.app" : window.location.origin;
+    const redirectUrl = `${siteOrigin}/account.html`;
+    const signupUrl = new URL(`${url.replace(/\/$/, "")}/auth/v1/signup`);
+    signupUrl.searchParams.set("redirect_to", redirectUrl);
+    const response = await fetch(signupUrl, {
       method: "POST",
       headers: {
         apikey: anonKey,
