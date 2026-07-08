@@ -44,19 +44,33 @@ function destinationAddress(address = {}) {
   };
 }
 
-function defaultParcel(quantity = 1) {
-  const count = Math.max(1, Number(quantity || 1));
-  const defaultWeight = Number(env("SHIP_DEFAULT_WEIGHT_OZ", "8"));
-  const weight = Math.max(defaultWeight, defaultWeight * count);
+function defaultItemWeight() {
+  return Number(env("SHIP_DEFAULT_ITEM_WEIGHT_OZ", env("SHIP_DEFAULT_WEIGHT_OZ", "1"))) || 1;
+}
+
+function standardBoxParcel(weightOz = 1) {
+  const weight = Math.max(1, Math.ceil(Number(weightOz || 1)));
 
   return {
-    length: env("SHIP_DEFAULT_LENGTH_IN", "10"),
-    width: env("SHIP_DEFAULT_WIDTH_IN", "7"),
-    height: env("SHIP_DEFAULT_HEIGHT_IN", "4"),
+    length: "8",
+    width: "4",
+    height: "3",
     distance_unit: "in",
     weight: String(weight),
     mass_unit: "oz"
   };
+}
+
+function defaultParcel(quantity = 1) {
+  return standardBoxParcel(defaultItemWeight() * Math.max(1, Number(quantity || 1)));
+}
+
+function groupedPackageWeight(items = []) {
+  const total = items.reduce((sum, item) => {
+    const quantity = Math.max(0, Number(item.quantity || 0));
+    return sum + positiveNumber(item.productWeight, defaultItemWeight()) * quantity;
+  }, 0);
+  return Math.ceil(Math.max(1, total));
 }
 
 function positiveNumber(value, fallback) {
@@ -66,8 +80,8 @@ function positiveNumber(value, fallback) {
 
 function productParcel(item = {}) {
   const quantity = Math.max(1, Number(item.quantity || 1));
-  const fallback = defaultParcel(quantity);
-  const weight = positiveNumber(item.packageWeight, Number(fallback.weight)) * quantity;
+  const fallback = standardBoxParcel(positiveNumber(item.productWeight, defaultItemWeight()) * quantity);
+  const weight = positiveNumber(item.packageWeight, positiveNumber(item.productWeight, defaultItemWeight())) * quantity;
 
   return {
     length: String(positiveNumber(item.packageLength, Number(fallback.length))),
@@ -104,7 +118,7 @@ function buildPackages(items = []) {
       type: "grouped",
       label: "Standard package",
       items: groupedItems.map((item) => ({ id: item.id, quantity: Math.max(0, Number(item.quantity || 0)) })),
-      parcel: defaultParcel(groupedQuantity)
+      parcel: standardBoxParcel(groupedPackageWeight(groupedItems))
     });
   }
 

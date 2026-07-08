@@ -54,6 +54,7 @@
 
   function shippingProfile(product = {}) {
     return {
+      productWeight: positiveNumberOrNull(product.productWeight),
       mustShipSeparately: Boolean(product.mustShipSeparately),
       packageLength: positiveNumberOrNull(product.packageLength),
       packageWidth: positiveNumberOrNull(product.packageWidth),

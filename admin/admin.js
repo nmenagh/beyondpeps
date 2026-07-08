@@ -37,6 +37,7 @@ const productSchema = [
   ["category", "Category"],
   ["price", "Price", "number"],
   ["stockLevel", "Stock level", "number"],
+  ["productWeight", "Product weight (oz)", "number"],
   ["status", "Status"],
   ["featured", "Featured product", "checkbox"],
   ["mustShipSeparately", "Must Ship Separately", "checkbox"],
@@ -1506,7 +1507,7 @@ function setupActions() {
     button.addEventListener("click", () => {
       const collection = button.dataset.add;
       const templates = {
-        products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, status: "Draft", featured: false, mustShipSeparately: false, packageLength: null, packageWidth: null, packageHeight: null, packageWeight: null, imageUrl: "", galleryImages: [], summary: "", description: "" },
+        products: { id: `product-${Date.now()}`, name: "New product", category: "Research Supplies", price: 0, stockLevel: 0, productWeight: null, status: "Draft", featured: false, mustShipSeparately: false, packageLength: null, packageWidth: null, packageHeight: null, packageWeight: null, imageUrl: "", galleryImages: [], summary: "", description: "" },
         references: { slug: `reference-${Date.now()}`, title: "New reference", type: "Guide", status: "Published", summary: "", body: "" },
         posts: { slug: `post-${Date.now()}`, title: "New post", date: new Date().toISOString().slice(0, 10), status: "Draft", imageUrl: "", heroImageUrl: "", summary: "", body: "" }
       };
