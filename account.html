@@ -53,9 +53,41 @@
           </label>
           <div class="inline-actions">
             <button class="button primary" id="signInButton" type="submit">Sign in</button>
-            <button class="button ghost" id="signUpButton" type="button">Create account</button>
+            <button class="button ghost" id="showSignUpButton" type="button">Create account</button>
           </div>
           <p class="admin-note" id="authStatus">Use the same login for account and admin access.</p>
+        </form>
+
+        <form class="glass-panel account-card is-hidden" id="signUpForm">
+          <p class="eyebrow">Create account</p>
+          <h2>New account</h2>
+          <div class="form-grid">
+            <label>
+              First name
+              <input id="signUpFirstName" type="text" autocomplete="given-name" required>
+            </label>
+            <label>
+              Last name
+              <input id="signUpLastName" type="text" autocomplete="family-name" required>
+            </label>
+          </div>
+          <label>
+            Email
+            <input id="signUpEmail" type="email" autocomplete="email" required>
+          </label>
+          <label>
+            Password
+            <input id="signUpPassword" type="password" autocomplete="new-password" minlength="8" required>
+          </label>
+          <label>
+            Confirm password
+            <input id="signUpPasswordConfirm" type="password" autocomplete="new-password" minlength="8" required>
+          </label>
+          <div class="inline-actions">
+            <button class="button primary" type="submit">Create account</button>
+            <button class="button ghost" id="backToSignInButton" type="button">Back to sign in</button>
+          </div>
+          <p class="admin-note" id="signUpStatus">Use at least 8 characters for your password.</p>
         </form>
 
         <section class="account-shell is-hidden" id="profileForm">

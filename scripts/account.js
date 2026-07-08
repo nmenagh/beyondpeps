@@ -1,7 +1,9 @@
 (function () {
   const authForm = document.querySelector("#authForm");
+  const signUpForm = document.querySelector("#signUpForm");
   const profileForm = document.querySelector("#profileForm");
   const authStatus = document.querySelector("#authStatus");
+  const signUpStatus = document.querySelector("#signUpStatus");
   const profileStatus = document.querySelector("#profileStatus");
   const adminLink = document.querySelector("#accountAdminLink");
   const settingsForm = document.querySelector("#settingsForm");
@@ -227,6 +229,7 @@
     const user = await window.BeyondPepsSupabase.currentUser();
     if (!user) {
       authForm.classList.remove("is-hidden");
+      signUpForm?.classList.add("is-hidden");
       profileForm.classList.add("is-hidden");
       setAdminVisible(false);
       activeUser = null;
@@ -235,6 +238,7 @@
     }
 
     authForm.classList.add("is-hidden");
+    signUpForm?.classList.add("is-hidden");
     profileForm.classList.remove("is-hidden");
     activeUser = user;
     activeProfile = await window.BeyondPepsSupabase.loadProfile();
@@ -266,11 +270,11 @@
 
   authForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const email = inputValue("#accountEmail");
+    const password = document.querySelector("#accountPassword")?.value || "";
+
     try {
-      await window.BeyondPepsSupabase.signIn(
-        inputValue("#accountEmail"),
-        document.querySelector("#accountPassword").value
-      );
+      await window.BeyondPepsSupabase.signIn(email, password);
       setStatus(authStatus, "Signed in.");
       await showProfile();
       window.BeyondPepsSite?.updateAccountPill?.();
@@ -279,17 +283,49 @@
     }
   });
 
-  document.querySelector("#signUpButton")?.addEventListener("click", async () => {
+  document.querySelector("#showSignUpButton")?.addEventListener("click", () => {
+    authForm.classList.add("is-hidden");
+    signUpForm?.classList.remove("is-hidden");
+    document.querySelector("#signUpFirstName")?.focus();
+  });
+
+  document.querySelector("#backToSignInButton")?.addEventListener("click", () => {
+    signUpForm?.classList.add("is-hidden");
+    authForm.classList.remove("is-hidden");
+    document.querySelector("#accountEmail")?.focus();
+  });
+
+  signUpForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const password = document.querySelector("#signUpPassword")?.value || "";
+    const passwordConfirm = document.querySelector("#signUpPasswordConfirm")?.value || "";
+
+    if (password !== passwordConfirm) {
+      setStatus(signUpStatus, "Account creation failed: passwords do not match.");
+      return;
+    }
+
+    const firstName = inputValue("#signUpFirstName");
+    const lastName = inputValue("#signUpLastName");
+    const email = inputValue("#signUpEmail");
+
     try {
-      await window.BeyondPepsSupabase.signUp(
-        inputValue("#accountEmail"),
-        document.querySelector("#accountPassword").value
-      );
-      setStatus(authStatus, "Account created. If email confirmation is enabled, confirm your email before signing in.");
-      await showProfile();
-      window.BeyondPepsSite?.updateAccountPill?.();
+      const result = await window.BeyondPepsSupabase.signUp(email, password, {
+        full_name: [firstName, lastName].filter(Boolean).join(" ")
+      });
+      signUpForm.reset();
+
+      if (result.access_token) {
+        await showProfile();
+        window.BeyondPepsSite?.updateAccountPill?.();
+      } else {
+        signUpForm.classList.add("is-hidden");
+        authForm.classList.remove("is-hidden");
+        document.querySelector("#accountEmail").value = email;
+        setStatus(authStatus, "Account created. Check your email to confirm your account, then sign in.");
+      }
     } catch (error) {
-      setStatus(authStatus, `Account creation failed: ${error.message}`);
+      setStatus(signUpStatus, `Account creation failed: ${error.message}`);
     }
   });
 
@@ -348,6 +384,7 @@
   document.querySelector("#accountSignOut")?.addEventListener("click", () => {
     window.BeyondPepsSupabase.clearSession();
     authForm.classList.remove("is-hidden");
+    signUpForm?.classList.add("is-hidden");
     profileForm.classList.add("is-hidden");
     setAdminVisible(false);
     activeUser = null;

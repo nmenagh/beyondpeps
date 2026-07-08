@@ -453,7 +453,7 @@
     return value;
   }
 
-  async function signUp(email, password) {
+  async function signUp(email, password, metadata = {}) {
     if (!isConfigured()) {
       throw new Error("Supabase URL or anon key is missing.");
     }
@@ -465,7 +465,7 @@
         apikey: anonKey,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, data: metadata })
     });
 
     if (!response.ok) {
