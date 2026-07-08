@@ -18,6 +18,9 @@ let mediaAssets = [];
 let orders = [];
 let activeOrderId = null;
 let activeProductIndex = null;
+let activeReferenceIndex = null;
+let activePostIndex = null;
+let activePaymentSectionId = null;
 let activeSiteCopyPageId = null;
 let activeAdminEmail = "";
 const ORDER_STATUSES = ["pending", "paid", "fulfilled", "cancelled", "refunded"];
@@ -905,6 +908,39 @@ function renderPaymentFields() {
   const root = document.querySelector("#paymentFields");
   if (!root) return;
   root.innerHTML = "";
+
+  if (!activePaymentSectionId) {
+    const grid = document.createElement("div");
+    grid.className = "page-copy-grid";
+    const zelleTile = document.createElement("button");
+    zelleTile.className = "page-copy-tile";
+    zelleTile.type = "button";
+    zelleTile.innerHTML = `
+      <span class="page-copy-index">ZE</span>
+      <span class="page-copy-text">
+        <strong>Zelle</strong>
+        <small>Payment credentials, payment link, QR code, memo copy, and test email.</small>
+      </span>
+    `;
+    zelleTile.addEventListener("click", () => {
+      activePaymentSectionId = "zelle";
+      renderAll();
+    });
+    grid.append(zelleTile);
+    root.append(grid);
+    return;
+  }
+
+  const back = document.createElement("button");
+  back.className = "button ghost product-back";
+  back.type = "button";
+  back.textContent = "Back to payment tiles";
+  back.addEventListener("click", () => {
+    activePaymentSectionId = null;
+    renderAll();
+  });
+  root.append(back);
+
   root.append(field("Zelle payment settings", content.site.paymentMethods, (value) => {
     content.site.paymentMethods = normalizePaymentMethods(value);
   }, "payment_settings"));
@@ -1210,6 +1246,8 @@ function editorCard(collection, item, index, schema) {
   remove.addEventListener("click", () => {
     content[collection].splice(index, 1);
     if (collection === "products") activeProductIndex = null;
+    if (collection === "references") activeReferenceIndex = null;
+    if (collection === "posts") activePostIndex = null;
     renderAll();
   });
   card.append(remove);
@@ -1271,19 +1309,68 @@ function renderCollection(collection, rootSelector, schema) {
   });
 }
 
+function renderEditableTiles(collection, rootSelector, schema, activeIndex, setActiveIndex, options = {}) {
+  const root = document.querySelector(rootSelector);
+  root.innerHTML = "";
+
+  if (Number.isInteger(activeIndex) && content[collection]?.[activeIndex]) {
+    const back = document.createElement("button");
+    back.className = "button ghost product-back";
+    back.type = "button";
+    back.textContent = `Back to ${options.backLabel || "tiles"}`;
+    back.addEventListener("click", () => {
+      setActiveIndex(null);
+      renderAll();
+    });
+    root.append(back, editorCard(collection, content[collection][activeIndex], activeIndex, schema));
+    return;
+  }
+
+  if (!content[collection]?.length) {
+    root.innerHTML = `<div class="empty-media">${escapeAttribute(options.emptyText || "No items yet.")}</div>`;
+    return;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "content-admin-grid";
+  content[collection].forEach((item, index) => {
+    const tile = document.createElement("button");
+    tile.className = "content-admin-tile";
+    tile.type = "button";
+    tile.innerHTML = `
+      <span class="content-admin-status">${escapeAttribute(item.status || "Draft")}</span>
+      <strong>${escapeAttribute(item.title || item.name || "Untitled")}</strong>
+      <small>${escapeAttribute(options.meta?.(item) || "")}</small>
+      <span>${escapeAttribute(item.summary || item.body?.replace(/<[^>]*>/g, "").slice(0, 120) || "No summary yet.")}</span>
+    `;
+    tile.addEventListener("click", () => {
+      setActiveIndex(index);
+      renderAll();
+    });
+    grid.append(tile);
+  });
+  root.append(grid);
+}
+
 function renderCollections() {
   renderProductTiles();
 
-  renderCollection("references", "#referencesEditor", [
+  renderEditableTiles("references", "#referencesEditor", [
     ["slug", "Slug"],
     ["title", "Title"],
     ["type", "Type"],
     ["status", "Status"],
     ["summary", "Card summary", "textarea", true],
     ["body", "Reference page body", "richtext", true]
-  ]);
+  ], activeReferenceIndex, (value) => {
+    activeReferenceIndex = value;
+  }, {
+    backLabel: "reference tiles",
+    emptyText: "No references yet. Use Add reference to create one.",
+    meta: (reference) => reference.type || "Reference"
+  });
 
-  renderCollection("posts", "#postsEditor", [
+  renderEditableTiles("posts", "#postsEditor", [
     ["slug", "Slug"],
     ["title", "Title"],
     ["date", "Date"],
@@ -1292,7 +1379,13 @@ function renderCollections() {
     ["heroImageUrl", "Blog post hero image", "image", true, "blog"],
     ["summary", "Summary", "textarea", true],
     ["body", "Blog post body", "richtext", true]
-  ]);
+  ], activePostIndex, (value) => {
+    activePostIndex = value;
+  }, {
+    backLabel: "blog tiles",
+    emptyText: "No blog posts yet. Use Add post to create one.",
+    meta: (post) => post.date || "Blog post"
+  });
 }
 
 function updateJsonEditor() {
@@ -1389,6 +1482,8 @@ function setupActions() {
       };
       content[collection].push(templates[collection]);
       if (collection === "products") activeProductIndex = content.products.length - 1;
+      if (collection === "references") activeReferenceIndex = content.references.length - 1;
+      if (collection === "posts") activePostIndex = content.posts.length - 1;
       renderAll();
     });
   });
