@@ -580,7 +580,7 @@
   async function loadOrders() {
     const user = await currentUser();
     if (!user?.id) return [];
-    return request(`/rest/v1/orders?user_id=eq.${encodeURIComponent(user.id)}&select=id,status,total_cents,currency,created_at&order=created_at.desc`);
+    return request(`/rest/v1/orders?user_id=eq.${encodeURIComponent(user.id)}&select=*,order_items(*)&order=created_at.desc`);
   }
 
   async function loadAdminOrders() {

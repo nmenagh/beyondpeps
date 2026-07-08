@@ -10,6 +10,7 @@
   const addressesForm = document.querySelector("#addressesForm");
   const passwordForm = document.querySelector("#passwordForm");
   const orderList = document.querySelector("#orderList");
+  const orderDetail = document.querySelector("#orderDetail");
   const ordersEmpty = document.querySelector("#ordersEmpty");
   const billingSameAsShipping = document.querySelector("#billingSameAsShipping");
 
@@ -154,6 +155,16 @@
     }).format(Number(cents || 0) / 100);
   }
 
+  function escapeHtml(value = "") {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#039;"
+    })[char]);
+  }
+
   function formatOrderDate(value) {
     if (!value) return "";
     return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
@@ -198,18 +209,112 @@
   function renderOrders(orders = []) {
     ordersEmpty?.classList.toggle("is-hidden", orders.length > 0);
     orderList?.classList.toggle("is-hidden", orders.length === 0);
+    orderDetail?.classList.add("is-hidden");
     if (!orderList) return;
 
     orderList.innerHTML = orders.map((order) => `
-      <article class="order-row">
+      <button class="order-row" type="button" data-order-id="${escapeHtml(order.id)}">
         <div>
           <span class="tile-kicker">${formatOrderDate(order.created_at)}</span>
           <strong>Order ${String(order.id).slice(0, 8)}</strong>
         </div>
         <span>${order.status || "pending"}</span>
         <strong>${moneyFromCents(order.total_cents, order.currency)}</strong>
-      </article>
+      </button>
     `).join("");
+
+    orderList.querySelectorAll("[data-order-id]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const order = orders.find((item) => item.id === button.dataset.orderId);
+        if (order) renderOrderDetail(order);
+      });
+    });
+  }
+
+  function orderAddressLines(address = {}) {
+    return [
+      address.name,
+      address.street1 || address.line1,
+      address.street2 || address.line2,
+      [address.city, address.state, address.zip || address.postal].filter(Boolean).join(", "),
+      address.phone,
+      address.email
+    ].filter(Boolean);
+  }
+
+  function orderTracking(order = {}) {
+    const labels = Array.isArray(order.shipping_method?.labels) ? order.shipping_method.labels : [];
+    if (labels.length) return labels;
+    if (!order.tracking_number && !order.tracking_url) return [];
+    return [{
+      trackingNumber: order.tracking_number || "",
+      trackingUrl: order.tracking_url || "",
+      trackingCarrier: order.tracking_carrier || order.shipping_provider || ""
+    }];
+  }
+
+  function renderOrderDetail(order) {
+    if (!orderDetail || !orderList) return;
+    const items = Array.isArray(order.order_items) ? order.order_items : [];
+    const tracking = orderTracking(order);
+    const shippingMethod = [
+      order.shipping_provider || order.shipping_method?.provider,
+      order.shipping_service || order.shipping_method?.servicelevel
+    ].filter(Boolean).join(" - ");
+
+    orderList.classList.add("is-hidden");
+    ordersEmpty?.classList.add("is-hidden");
+    orderDetail.classList.remove("is-hidden");
+    orderDetail.innerHTML = `
+      <div class="order-customer-header">
+        <button class="button ghost" id="backToOrderHistory" type="button">Back to orders</button>
+        <div>
+          <p class="eyebrow">Order ${escapeHtml(String(order.id).slice(0, 8))}</p>
+          <h3>${escapeHtml(formatOrderDate(order.created_at))}</h3>
+          <span class="order-detail-status">${escapeHtml(order.status || "pending")}</span>
+        </div>
+      </div>
+      <div class="order-customer-grid">
+        <section>
+          <h4>Order items</h4>
+          <div class="order-detail-lines">
+            ${items.map((item) => `
+              <p>
+                <span>${escapeHtml(item.product_title || item.product_name || item.product_slug || "Item")} &times; ${escapeHtml(item.quantity || 1)}</span>
+                <strong>${escapeHtml(moneyFromCents(item.total_cents || (item.unit_price_cents || item.price_cents_at_purchase || 0) * (item.quantity || 1), order.currency))}</strong>
+              </p>
+            `).join("") || "<p>No item details are available.</p>"}
+          </div>
+        </section>
+        <section>
+          <h4>Shipping address</h4>
+          <address>${orderAddressLines(order.shipping_address).map((line) => escapeHtml(line)).join("<br>") || "No shipping address available."}</address>
+          ${shippingMethod ? `<p>${escapeHtml(shippingMethod)}</p>` : ""}
+        </section>
+        <section>
+          <h4>Tracking</h4>
+          ${tracking.map((shipment, index) => `
+            <p class="order-tracking-line">
+              <span>${escapeHtml(shipment.trackingCarrier || `Package ${index + 1}`)}</span>
+              <strong>${escapeHtml(shipment.trackingNumber || "Tracking pending")}</strong>
+              ${shipment.trackingUrl ? `<a href="${escapeHtml(shipment.trackingUrl)}" target="_blank" rel="noopener">Track package</a>` : ""}
+            </p>
+          `).join("") || "<p>Tracking will appear here after the order ships.</p>"}
+        </section>
+        <section>
+          <h4>Totals</h4>
+          <div class="order-detail-lines">
+            <p><span>Subtotal</span><strong>${escapeHtml(moneyFromCents(order.subtotal_cents, order.currency))}</strong></p>
+            <p><span>Shipping</span><strong>${escapeHtml(moneyFromCents(order.shipping_cents, order.currency))}</strong></p>
+            <p><span>Total</span><strong>${escapeHtml(moneyFromCents(order.total_cents, order.currency))}</strong></p>
+          </div>
+        </section>
+      </div>
+    `;
+    orderDetail.querySelector("#backToOrderHistory")?.addEventListener("click", () => {
+      orderDetail.classList.add("is-hidden");
+      orderList.classList.remove("is-hidden");
+    });
   }
 
   async function saveProfilePatch(patch = {}) {

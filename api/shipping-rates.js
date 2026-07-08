@@ -31,10 +31,15 @@ function originAddress() {
 }
 
 function destinationAddress(address = {}) {
+  const street = required(address.street1, "Street address");
+  const apartment = String(address.street2 || "").trim();
+
   return {
     name: required(address.name, "Ship-to name"),
-    street1: required(address.street1, "Street address"),
-    street2: address.street2 || "",
+    // Some carrier labels render street2 above street1. Keeping the unit on the
+    // delivery-address line preserves the customer's street-first order.
+    street1: [street, apartment].filter(Boolean).join(" "),
+    street2: "",
     city: required(address.city, "City"),
     state: required(address.state, "State"),
     zip: required(address.zip, "ZIP code"),

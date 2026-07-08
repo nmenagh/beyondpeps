@@ -1297,14 +1297,25 @@ select:disabled {
 }
 
 .order-row {
+  width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 1rem;
   align-items: center;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
   padding: 0.9rem 1rem;
   border: 1px solid rgba(188, 244, 255, 0.18);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.045);
+}
+
+.order-row:hover,
+.order-row:focus-visible {
+  border-color: rgba(91, 245, 207, 0.65);
+  background: rgba(91, 245, 207, 0.08);
 }
 
 .order-row > span {
@@ -1313,6 +1324,73 @@ select:disabled {
   font-weight: 820;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.order-customer-detail {
+  display: grid;
+  gap: 1rem;
+}
+
+.order-customer-header {
+  display: flex;
+  align-items: start;
+  gap: 1rem;
+}
+
+.order-customer-header > div {
+  flex: 1;
+}
+
+.order-customer-header h3 {
+  margin: 0.2rem 0 0.45rem;
+}
+
+.order-detail-status {
+  color: var(--mint);
+  font-size: 0.78rem;
+  font-weight: 820;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.order-customer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.order-customer-grid > section {
+  padding: 1rem;
+  border: 1px solid rgba(188, 244, 255, 0.16);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.order-customer-grid h4 {
+  margin: 0 0 0.8rem;
+}
+
+.order-customer-grid address {
+  color: var(--muted);
+  font-style: normal;
+  line-height: 1.55;
+}
+
+.order-detail-lines p,
+.order-tracking-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.45rem 1rem;
+  margin: 0;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(188, 244, 255, 0.12);
+}
+
+.order-tracking-line a {
+  width: 100%;
+  color: var(--mint);
+  font-weight: 800;
 }
 
 .account-card-header {
@@ -1825,6 +1903,12 @@ legend {
   }
 
   .order-row {
+    grid-template-columns: 1fr;
+  }
+
+  .order-customer-header,
+  .order-customer-grid {
+    display: grid;
     grid-template-columns: 1fr;
   }
 
