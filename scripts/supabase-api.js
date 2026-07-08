@@ -169,9 +169,10 @@
 
   function postToDb(post) {
     const status = uiStatusToDb(post.status || "draft");
+    const title = post.title || "Untitled post";
     return {
-      slug: slugify(post.title || "untitled-post"),
-      title: post.title || "Untitled post",
+      slug: post.slug || post.id || slugify(title),
+      title,
       summary: post.summary || "",
       body: post.body || post.summary || "",
       image_url: post.imageUrl || null,
@@ -217,17 +218,22 @@
     return values.map((value) => encodeURIComponent(`"${String(value).replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}"`)).join(",");
   }
 
-  function collapseDuplicateSlugRows(rows = []) {
-    const bySlug = new Map();
+  function collapseRows(rows = [], keyForRow = (row) => row.slug) {
+    const byKey = new Map();
     rows.forEach((row) => {
-      const slug = row.slug || slugify(row.title || row.name || `item-${bySlug.size + 1}`);
-      const key = String(row.title || row.name || slug).trim().toLowerCase() || String(slug).toLowerCase().replace(/-\d+$/, "");
-      const existing = bySlug.get(key);
-      bySlug.set(key, existing
-        ? { ...existing, ...row, slug: existing.slug, sort_order: existing.sort_order }
-        : { ...row, slug });
+      const slug = row.slug || slugify(row.title || row.name || `item-${byKey.size + 1}`);
+      const keyedRow = { ...row, slug };
+      const key = String(keyForRow(keyedRow) || slug).trim().toLowerCase();
+      const existing = byKey.get(key);
+      byKey.set(key, existing
+        ? { ...existing, ...keyedRow, slug: existing.slug, sort_order: existing.sort_order }
+        : keyedRow);
     });
-    return [...bySlug.values()];
+    return [...byKey.values()];
+  }
+
+  function productSaveKey(row = {}) {
+    return row.title || row.name || String(row.slug || "").replace(/-\d+$/, "");
   }
 
   async function deleteMissingReferences(slugs = []) {
@@ -283,7 +289,7 @@
       body: [{ key: "home", value: content.site }]
     });
 
-    const productRows = collapseDuplicateSlugRows(content.products.map(productToDb));
+    const productRows = collapseRows(collapseRows(content.products.map(productToDb), productSaveKey), (row) => row.slug);
     await request("/rest/v1/products?on_conflict=slug", {
       method: "POST",
       prefer: "resolution=merge-duplicates,return=representation",
@@ -291,7 +297,7 @@
     });
     await deleteMissingProducts(productRows.map((product) => product.slug));
 
-    const referenceRows = content.references.map(referenceToDb);
+    const referenceRows = collapseRows(content.references.map(referenceToDb), (row) => row.slug);
     await request("/rest/v1/references?on_conflict=slug", {
       method: "POST",
       prefer: "resolution=merge-duplicates,return=representation",
@@ -299,10 +305,11 @@
     });
     await deleteMissingReferences(referenceRows.map((reference) => reference.slug));
 
+    const postRows = collapseRows(content.posts.map(postToDb), (row) => row.slug);
     await request("/rest/v1/blog_posts?on_conflict=slug", {
       method: "POST",
       prefer: "resolution=merge-duplicates,return=representation",
-      body: content.posts.map(postToDb)
+      body: postRows
     });
 
     return true;
