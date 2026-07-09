@@ -1530,8 +1530,15 @@ function previewEmailTemplate(template = {}) {
 
   dialog.querySelector("#emailPreviewTitle").textContent = template.name || "Email preview";
   dialog.querySelector("#emailPreviewSubject").textContent = `Subject: ${replace(template.subject || "Beyond Peps")}`;
-  dialog.querySelector("#emailPreviewFrame").srcdoc = previewHtml;
-  dialog.showModal();
+  const previousFrame = dialog.querySelector("#emailPreviewFrame");
+  const frame = document.createElement("iframe");
+  frame.id = "emailPreviewFrame";
+  frame.title = "Rendered email template preview";
+  frame.setAttribute("sandbox", "");
+  frame.srcdoc = previewHtml;
+  previousFrame.replaceWith(frame);
+
+  if (!dialog.open) dialog.showModal();
 }
 
 function renderEmailTemplates() {
