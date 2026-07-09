@@ -533,6 +533,10 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       ["insertUnorderedList", "Bullet list"],
       ["insertOrderedList", "Numbered list"],
       ["createLink", "Link"],
+      ["justifyLeft", "Left"],
+      ["justifyCenter", "Center"],
+      ["justifyRight", "Right"],
+      ["toggleSource", "HTML source"],
       ["formatBlock", "Heading", "H3"],
       ["formatBlock", "Paragraph", "P"]
     ].forEach(([command, text, argument]) => {
@@ -541,6 +545,24 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       button.textContent = text;
       button.addEventListener("mousedown", (event) => event.preventDefault());
       button.addEventListener("click", () => {
+        if (command === "toggleSource") {
+          const enteringSource = sourceEditor.hidden;
+          if (enteringSource) {
+            sourceEditor.value = editor.innerHTML;
+            editor.hidden = true;
+            sourceEditor.hidden = false;
+            sourceEditor.focus();
+            button.classList.add("is-active");
+          } else {
+            editor.innerHTML = cleanRichHtml(sourceEditor.value);
+            sourceEditor.hidden = true;
+            editor.hidden = false;
+            editor.focus();
+            button.classList.remove("is-active");
+            onInput(editor.innerHTML);
+          }
+          return;
+        }
         editor.focus();
         if (command === "createLink") {
           let href = window.prompt("Enter the link URL");
@@ -579,7 +601,19 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       onInput(editor.innerHTML);
     });
 
-    wrap.append(fieldLabel, toolbar, editor);
+    const sourceEditor = document.createElement("textarea");
+    sourceEditor.className = "richtext-source";
+    sourceEditor.hidden = true;
+    sourceEditor.setAttribute("aria-label", `${label} HTML source`);
+    sourceEditor.addEventListener("blur", () => {
+      if (sourceEditor.hidden) return;
+      const cleaned = cleanRichHtml(sourceEditor.value);
+      sourceEditor.value = cleaned;
+      editor.innerHTML = cleaned;
+      onInput(cleaned);
+    });
+
+    wrap.append(fieldLabel, toolbar, editor, sourceEditor);
     return wrap;
   }
 

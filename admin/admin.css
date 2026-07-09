@@ -695,6 +695,12 @@ button {
   background: rgba(66, 228, 255, 0.12);
 }
 
+.richtext-toolbar button.is-active {
+  border-color: var(--mint);
+  background: rgba(91, 245, 207, 0.14);
+  color: #ffffff;
+}
+
 .richtext-editor {
   min-height: 18rem;
   overflow: auto;
@@ -703,6 +709,24 @@ button {
   border-radius: var(--radius);
   background: rgba(1, 7, 11, 0.6);
   color: var(--text);
+  outline: none;
+}
+
+.richtext-source {
+  min-height: 18rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(1, 7, 11, 0.78);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.richtext-source:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(66, 228, 255, 0.14);
   outline: none;
 }
 
