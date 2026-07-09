@@ -625,14 +625,48 @@
     return rows?.[0] || null;
   }
 
+  async function deleteEmailTemplate(templateId) {
+    await request(`/rest/v1/crm_sequence_steps?template_id=eq.${encodeURIComponent(templateId)}`, {
+      method: "DELETE",
+      prefer: "return=minimal"
+    });
+    await request(`/rest/v1/email_templates?id=eq.${encodeURIComponent(templateId)}&category=neq.transactional`, {
+      method: "DELETE",
+      prefer: "return=minimal"
+    });
+    return true;
+  }
+
   async function loadCrmDashboard() {
-    const [contacts, sequences, steps, sends] = await Promise.all([
+    const [contacts, sequences, steps, sends, campaigns] = await Promise.all([
       request("/rest/v1/crm_contacts?select=*&order=created_at.desc"),
       request("/rest/v1/crm_sequences?select=*&order=created_at.desc"),
       request("/rest/v1/crm_sequence_steps?select=*&order=sort_order.asc"),
-      request("/rest/v1/crm_sends?select=*&order=sent_at.desc&limit=250")
+      request("/rest/v1/crm_sends?select=*&order=sent_at.desc&limit=250"),
+      request("/rest/v1/crm_campaigns?select=*&order=scheduled_at.desc")
     ]);
-    return { contacts, sequences, steps, sends };
+    return { contacts, sequences, steps, sends, campaigns };
+  }
+
+  async function scheduleCrmCampaign(campaign = {}) {
+    const rows = await request("/rest/v1/crm_campaigns", {
+      method: "POST",
+      body: [{
+        template_id: campaign.template_id,
+        name: campaign.name || "Email blast",
+        scheduled_at: campaign.scheduled_at,
+        status: "scheduled"
+      }]
+    });
+    return rows?.[0] || null;
+  }
+
+  async function cancelCrmCampaign(campaignId) {
+    const rows = await request(`/rest/v1/crm_campaigns?id=eq.${encodeURIComponent(campaignId)}&status=eq.scheduled`, {
+      method: "PATCH",
+      body: { status: "cancelled", updated_at: new Date().toISOString() }
+    });
+    return rows?.[0] || null;
   }
 
   async function updateCrmContact(contactId, fields = {}) {
@@ -706,6 +740,8 @@
     currentUser,
     currentUserIsAdmin,
     createZelleOrder,
+    cancelCrmCampaign,
+    deleteEmailTemplate,
     isConfigured,
     loadProfile,
     loadOrders,
@@ -719,6 +755,7 @@
     saveContent,
     saveEmailTemplate,
     saveCrmSequence,
+    scheduleCrmCampaign,
     updateAdminOrder,
     updateCrmContact,
     validateCheckout,

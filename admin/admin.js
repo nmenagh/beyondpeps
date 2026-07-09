@@ -21,6 +21,7 @@ let crmContacts = [];
 let crmSequences = [];
 let crmSequenceSteps = [];
 let crmSends = [];
+let crmCampaigns = [];
 let activeOrderId = null;
 let activeProductIndex = null;
 let activeReferenceIndex = null;
@@ -247,6 +248,7 @@ async function loadEmailAndCrm() {
     crmSequences = crm.sequences || [];
     crmSequenceSteps = crm.steps || [];
     crmSends = crm.sends || [];
+    crmCampaigns = crm.campaigns || [];
   } catch (error) {
     console.warn("Email and CRM data unavailable.", error);
     emailTemplates = [];
@@ -254,6 +256,7 @@ async function loadEmailAndCrm() {
     crmSequences = [];
     crmSequenceSteps = [];
     crmSends = [];
+    crmCampaigns = [];
     toast(`Email and CRM unavailable: ${error.message}`);
   }
 }
@@ -1474,25 +1477,37 @@ function renderEmailTemplates() {
       root.innerHTML = `<div class="empty-media">No email templates are available. Apply the CRM database migration first.</div>`;
       return;
     }
-    const grid = document.createElement("div");
-    grid.className = "content-admin-grid";
-    emailTemplates.forEach((item) => {
-      const tile = document.createElement("button");
-      tile.className = "content-admin-tile";
-      tile.type = "button";
-      tile.innerHTML = `
-        <span class="content-admin-status">${escapeAttribute(item.category || "transactional")}</span>
-        <strong>${escapeAttribute(item.name || item.id)}</strong>
-        <small>${escapeAttribute(item.subject || "No subject")}</small>
-        <span>${escapeAttribute(item.enabled === false ? "Disabled" : "Enabled")}</span>
-      `;
-      tile.addEventListener("click", () => {
-        activeEmailTemplateId = item.id;
-        renderAll();
+    [
+      ["transactional", "Transactional templates", "Required order and account communication."],
+      ["marketing", "Automated marketing templates", "Emails used inside scheduled CRM sequences."],
+      ["blast", "Blast templates", "One-time sales, announcements, and promotional campaigns."]
+    ].forEach(([category, title, description]) => {
+      const items = emailTemplates.filter((item) => item.category === category);
+      const section = document.createElement("section");
+      section.className = "email-template-group";
+      section.innerHTML = `<div class="email-template-group-heading"><p class="eyebrow">${escapeAttribute(category)}</p><h2>${escapeAttribute(title)}</h2><p>${escapeAttribute(description)}</p></div>`;
+      const grid = document.createElement("div");
+      grid.className = "content-admin-grid";
+      items.forEach((item) => {
+        const tile = document.createElement("button");
+        tile.className = "content-admin-tile";
+        tile.type = "button";
+        tile.innerHTML = `
+          <span class="content-admin-status">${escapeAttribute(item.category || "transactional")}</span>
+          <strong>${escapeAttribute(item.name || item.id)}</strong>
+          <small>${escapeAttribute(item.subject || "No subject")}</small>
+          <span>${escapeAttribute(item.enabled === false ? "Disabled" : "Enabled")}</span>
+        `;
+        tile.addEventListener("click", () => {
+          activeEmailTemplateId = item.id;
+          renderAll();
+        });
+        grid.append(tile);
       });
-      grid.append(tile);
+      if (!items.length) grid.innerHTML = `<div class="empty-media">No ${escapeAttribute(category)} templates yet.</div>`;
+      section.append(grid);
+      root.append(section);
     });
-    root.append(grid);
     return;
   }
 
@@ -1539,6 +1554,90 @@ function renderEmailTemplates() {
     }
   });
   card.append(save);
+
+  if (template.category === "blast") {
+    const scheduler = document.createElement("section");
+    scheduler.className = "email-campaign-scheduler field-wide";
+    const tomorrow = new Date(Date.now() + 86400000);
+    tomorrow.setMinutes(0, 0, 0);
+    const localDefault = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    const campaigns = crmCampaigns.filter((campaign) => campaign.template_id === template.id);
+    scheduler.innerHTML = `
+      <div>
+        <p class="eyebrow">Blast scheduling</p>
+        <h3>Schedule this email</h3>
+      </div>
+      <label>Campaign name<input id="blastCampaignName" type="text" value="${escapeAttribute(template.name || "Email blast")}"></label>
+      <label>Send date and time<input id="blastCampaignTime" type="datetime-local" value="${localDefault}"></label>
+      <button class="button primary" id="scheduleBlast" type="button">Schedule blast</button>
+      <div class="campaign-list field-wide">
+        <span class="admin-field-label">Campaign history</span>
+        ${campaigns.map((campaign) => `
+          <article class="campaign-row">
+            <span><strong>${escapeAttribute(campaign.name)}</strong><small>${escapeAttribute(formatDate(campaign.scheduled_at))}</small></span>
+            <b>${escapeAttribute(campaign.status)}</b>
+            ${campaign.status === "scheduled" ? `<button class="remove-item" type="button" data-cancel-campaign="${escapeAttribute(campaign.id)}">Cancel</button>` : ""}
+          </article>
+        `).join("") || "<p>No campaigns have been scheduled from this template.</p>"}
+      </div>
+    `;
+    scheduler.querySelector("#scheduleBlast").addEventListener("click", async () => {
+      const name = scheduler.querySelector("#blastCampaignName").value.trim();
+      const dateValue = scheduler.querySelector("#blastCampaignTime").value;
+      if (!dateValue || Number.isNaN(new Date(dateValue).getTime())) {
+        toast("Choose a valid blast send time.");
+        return;
+      }
+      try {
+        const saved = await window.BeyondPepsSupabase.saveEmailTemplate(template);
+        Object.assign(template, saved || {});
+        await window.BeyondPepsSupabase.scheduleCrmCampaign({
+          template_id: template.id,
+          name: name || template.name,
+          scheduled_at: new Date(dateValue).toISOString()
+        });
+        await loadEmailAndCrm();
+        toast("Email blast scheduled.");
+        renderAll();
+      } catch (error) {
+        toast(`Blast scheduling failed: ${error.message}`);
+      }
+    });
+    scheduler.querySelectorAll("[data-cancel-campaign]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        try {
+          await window.BeyondPepsSupabase.cancelCrmCampaign(button.dataset.cancelCampaign);
+          await loadEmailAndCrm();
+          toast("Email blast cancelled.");
+          renderAll();
+        } catch (error) {
+          toast(`Campaign cancellation failed: ${error.message}`);
+        }
+      });
+    });
+    card.append(scheduler);
+  }
+
+  if (template.category !== "transactional") {
+    const remove = document.createElement("button");
+    remove.className = "remove-item";
+    remove.type = "button";
+    remove.textContent = "Delete template";
+    remove.addEventListener("click", async () => {
+      if (!window.confirm(`Delete "${template.name}"? This cannot be undone.`)) return;
+      try {
+        await window.BeyondPepsSupabase.deleteEmailTemplate(template.id);
+        emailTemplates = emailTemplates.filter((item) => item.id !== template.id);
+        activeEmailTemplateId = null;
+        await loadEmailAndCrm();
+        toast("Email template deleted.");
+        renderAll();
+      } catch (error) {
+        toast(`Template delete failed: ${error.message}`);
+      }
+    });
+    card.append(remove);
+  }
   root.append(back, card);
 }
 
@@ -1898,12 +1997,12 @@ function setupActions() {
     toast("CRM refreshed.");
     renderAll();
   });
-  document.querySelector("#addEmailTemplate")?.addEventListener("click", () => {
-    const id = `marketing_${Date.now()}`;
+  const addEmailTemplate = (category) => {
+    const id = `${category}_${Date.now()}`;
     emailTemplates.push({
       id,
-      name: "New marketing email",
-      category: "marketing",
+      name: category === "blast" ? "New email blast" : "New marketing email",
+      category,
       subject: "Beyond Peps",
       preview_text: "",
       header_image_url: "/assets/bp-logo-mark.png",
@@ -1912,7 +2011,9 @@ function setupActions() {
     });
     activeEmailTemplateId = id;
     renderAll();
-  });
+  };
+  document.querySelector("#addMarketingTemplate")?.addEventListener("click", () => addEmailTemplate("marketing"));
+  document.querySelector("#addBlastTemplate")?.addEventListener("click", () => addEmailTemplate("blast"));
   document.querySelectorAll("[data-add]").forEach((button) => {
     button.addEventListener("click", () => {
       const collection = button.dataset.add;

@@ -244,6 +244,70 @@ button {
   gap: 0.85rem;
 }
 
+.email-template-group {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.25rem 0 1.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.email-template-group:first-child {
+  padding-top: 0;
+}
+
+.email-template-group:last-child {
+  border-bottom: 0;
+}
+
+.email-template-group-heading h2 {
+  margin-bottom: 0.35rem;
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+}
+
+.email-template-group-heading p:last-child {
+  margin: 0;
+  color: var(--muted);
+}
+
+.email-campaign-scheduler {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.7fr) auto;
+  gap: 0.8rem;
+  align-items: end;
+  padding: 1rem;
+  border: 1px solid rgba(91, 245, 207, 0.28);
+  border-radius: var(--radius);
+  background: rgba(91, 245, 207, 0.045);
+}
+
+.email-campaign-scheduler > div:first-child,
+.campaign-list {
+  grid-column: 1 / -1;
+}
+
+.campaign-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.campaign-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.75rem;
+  border-top: 1px solid rgba(188, 244, 255, 0.13);
+}
+
+.campaign-row span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.campaign-row small {
+  color: var(--muted);
+}
+
 .order-admin-tile,
 .content-admin-tile {
   display: grid;
@@ -849,7 +913,9 @@ button {
   .editor-card,
   .order-detail-card,
   .shipping-method-grid,
-  .crm-step-row {
+  .crm-step-row,
+  .email-campaign-scheduler,
+  .campaign-row {
     grid-template-columns: 1fr;
   }
 }
