@@ -30,7 +30,10 @@ module.exports = async function handler(request, response) {
       throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for CRM scheduling.");
     }
     const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && request.headers.authorization !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+      throw new Error("CRON_SECRET is required for CRM scheduling.");
+    }
+    if (request.headers.authorization !== `Bearer ${cronSecret}`) {
       json(response, 401, { error: "Unauthorized." });
       return;
     }
