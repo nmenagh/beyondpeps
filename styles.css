@@ -1779,6 +1779,44 @@ legend {
   font-size: 0.85rem;
 }
 
+.newsletter-band {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 2rem auto 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(360px, 1.2fr);
+  gap: 2rem;
+  align-items: end;
+  padding: clamp(1.2rem, 4vw, 2.2rem);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(10, 37, 45, 0.68);
+}
+
+.newsletter-band h2 {
+  max-width: 15ch;
+  margin: 0;
+  font-size: clamp(1.7rem, 3vw, 2.8rem);
+}
+
+.newsletter-form {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr auto;
+  gap: 0.7rem;
+  align-items: end;
+}
+
+.newsletter-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.unsubscribe-card {
+  max-width: 620px;
+  margin: 10vh auto;
+}
+
 .site-footer p {
   max-width: 720px;
   margin-bottom: 0;
@@ -1939,6 +1977,11 @@ legend {
 
   .site-footer {
     display: block;
+  }
+
+  .newsletter-band,
+  .newsletter-form {
+    grid-template-columns: 1fr;
   }
 }
 

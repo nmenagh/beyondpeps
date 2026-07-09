@@ -277,6 +277,62 @@ function setupMobileNav() {
   });
 }
 
+function setupNewsletterSignup() {
+  const footer = document.querySelector(".site-footer");
+  if (!footer || document.querySelector("#newsletterSignup")) return;
+
+  const section = document.createElement("section");
+  section.className = "newsletter-band";
+  section.innerHTML = `
+    <div>
+      <p class="eyebrow">Beyond the order</p>
+      <h2>Research notes, tools, and new supply updates.</h2>
+    </div>
+    <form class="newsletter-form" id="newsletterSignup">
+      <label>
+        Name
+        <input name="fullName" type="text" autocomplete="name" placeholder="Your name">
+      </label>
+      <label>
+        Email
+        <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      </label>
+      <button class="button primary" type="submit">Join the mailing list</button>
+      <p class="newsletter-status" id="newsletterStatus">Marketing emails include an unsubscribe link. Order messages are separate.</p>
+    </form>
+  `;
+  footer.before(section);
+
+  section.querySelector("form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button");
+    const status = form.querySelector("#newsletterStatus");
+    const values = Object.fromEntries(new FormData(form));
+    button.disabled = true;
+    status.textContent = "Joining...";
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: values.email,
+          fullName: values.fullName,
+          source: "mailing_list_signup"
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Unable to join the mailing list.");
+      form.reset();
+      status.textContent = "You're on the list. Watch your inbox for Beyond Peps updates.";
+    } catch (error) {
+      status.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
 loadContent().then((content) => {
   window.BeyondPepsContent = content;
   applyContentBindings(content);
@@ -289,6 +345,7 @@ loadContent().then((content) => {
   updateAccountPill();
   setupMobileNav();
   setupHeroMotion();
+  setupNewsletterSignup();
 });
 
 window.BeyondPepsSite = {

@@ -480,6 +480,20 @@
 
     const value = await response.json();
     if (value.access_token) saveSession(value);
+    try {
+      await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          fullName: metadata.full_name || "",
+          source: "account_created",
+          userId: value.user?.id || null
+        })
+      });
+    } catch (error) {
+      console.warn("CRM account enrollment unavailable.", error);
+    }
     return value;
   }
 
@@ -588,6 +602,82 @@
     return request("/rest/v1/orders?select=*,order_items(*)&order=created_at.desc");
   }
 
+  async function loadEmailTemplates() {
+    return request("/rest/v1/email_templates?select=*&order=category.asc,name.asc");
+  }
+
+  async function saveEmailTemplate(template = {}) {
+    const rows = await request("/rest/v1/email_templates?on_conflict=id", {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=representation",
+      body: [{
+        id: template.id,
+        name: template.name || "Untitled template",
+        category: template.category || "transactional",
+        subject: template.subject || "",
+        preview_text: template.preview_text || "",
+        header_image_url: template.header_image_url || null,
+        body_html: template.body_html || "",
+        enabled: template.enabled !== false,
+        updated_at: new Date().toISOString()
+      }]
+    });
+    return rows?.[0] || null;
+  }
+
+  async function loadCrmDashboard() {
+    const [contacts, sequences, steps, sends] = await Promise.all([
+      request("/rest/v1/crm_contacts?select=*&order=created_at.desc"),
+      request("/rest/v1/crm_sequences?select=*&order=created_at.desc"),
+      request("/rest/v1/crm_sequence_steps?select=*&order=sort_order.asc"),
+      request("/rest/v1/crm_sends?select=*&order=sent_at.desc&limit=250")
+    ]);
+    return { contacts, sequences, steps, sends };
+  }
+
+  async function updateCrmContact(contactId, fields = {}) {
+    const rows = await request(`/rest/v1/crm_contacts?id=eq.${encodeURIComponent(contactId)}`, {
+      method: "PATCH",
+      body: { ...fields, updated_at: new Date().toISOString() }
+    });
+    return rows?.[0] || null;
+  }
+
+  async function saveCrmSequence(sequence = {}, steps = []) {
+    const rows = await request("/rest/v1/crm_sequences?on_conflict=id", {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=representation",
+      body: [{
+        id: sequence.id,
+        name: sequence.name || "Untitled sequence",
+        description: sequence.description || "",
+        trigger_source: sequence.trigger_source || "all",
+        active: Boolean(sequence.active),
+        updated_at: new Date().toISOString()
+      }]
+    });
+    const saved = rows?.[0];
+    if (!saved?.id) throw new Error("Sequence could not be saved.");
+
+    await request(`/rest/v1/crm_sequence_steps?sequence_id=eq.${encodeURIComponent(saved.id)}`, {
+      method: "DELETE",
+      prefer: "return=minimal"
+    });
+    if (steps.length) {
+      await request("/rest/v1/crm_sequence_steps", {
+        method: "POST",
+        body: steps.map((step, index) => ({
+          id: step.id,
+          sequence_id: saved.id,
+          template_id: step.template_id,
+          delay_days: Math.max(0, Number(step.delay_days || 0)),
+          sort_order: index * 10
+        }))
+      });
+    }
+    return saved;
+  }
+
   async function updateAdminOrder(orderId, fields = {}) {
     if (!isConfigured()) throw new Error("Supabase URL or anon key is missing.");
     const rows = await request(`/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`, {
@@ -620,12 +710,17 @@
     loadProfile,
     loadOrders,
     loadAdminOrders,
+    loadEmailTemplates,
+    loadCrmDashboard,
     loadContent,
     loadMediaAssets,
     recordMediaAsset,
     reserveCart,
     saveContent,
+    saveEmailTemplate,
+    saveCrmSequence,
     updateAdminOrder,
+    updateCrmContact,
     validateCheckout,
     deleteAdminOrder,
     saveProfile,

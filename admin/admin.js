@@ -16,12 +16,21 @@ let content = null;
 let adminAllowed = false;
 let mediaAssets = [];
 let orders = [];
+let emailTemplates = [];
+let crmContacts = [];
+let crmSequences = [];
+let crmSequenceSteps = [];
+let crmSends = [];
 let activeOrderId = null;
 let activeProductIndex = null;
 let activeReferenceIndex = null;
 let activePostIndex = null;
 let activePaymentSectionId = null;
 let activeSiteCopyPageId = null;
+let activeEmailTemplateId = null;
+let activeCrmSection = null;
+let activeCrmContactId = null;
+let activeCrmSequenceId = null;
 let activeAdminEmail = "";
 const ORDER_STATUSES = ["pending", "paid", "fulfilled", "cancelled", "refunded"];
 
@@ -227,6 +236,25 @@ async function loadAdminOrders() {
     console.warn("Orders unavailable.", error);
     orders = [];
     toast(`Orders unavailable: ${error.message}`);
+  }
+}
+
+async function loadEmailAndCrm() {
+  try {
+    emailTemplates = await window.BeyondPepsSupabase.loadEmailTemplates();
+    const crm = await window.BeyondPepsSupabase.loadCrmDashboard();
+    crmContacts = crm.contacts || [];
+    crmSequences = crm.sequences || [];
+    crmSequenceSteps = crm.steps || [];
+    crmSends = crm.sends || [];
+  } catch (error) {
+    console.warn("Email and CRM data unavailable.", error);
+    emailTemplates = [];
+    crmContacts = [];
+    crmSequences = [];
+    crmSequenceSteps = [];
+    crmSends = [];
+    toast(`Email and CRM unavailable: ${error.message}`);
   }
 }
 
@@ -1170,6 +1198,22 @@ async function updateOrderStatus(orderId, status) {
   try {
     await window.BeyondPepsSupabase.updateAdminOrder(orderId, { status });
     await loadAdminOrders();
+    const order = orders.find((item) => item.id === orderId);
+    if (orderEmail(order)) {
+      await fetch("../api/order-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "order_status_update",
+          customer: { email: orderEmail(order), name: orderCustomerName(order) },
+          order: {
+            orderId: order.id,
+            orderNumber: orderNumber(order),
+            status
+          }
+        })
+      });
+    }
     toast(`Order marked ${status}.`);
     renderAll();
   } catch (error) {
@@ -1419,6 +1463,349 @@ function renderCollections() {
   });
 }
 
+function renderEmailTemplates() {
+  const root = document.querySelector("#emailTemplatesEditor");
+  if (!root) return;
+  root.innerHTML = "";
+  const template = emailTemplates.find((item) => item.id === activeEmailTemplateId);
+
+  if (!template) {
+    if (!emailTemplates.length) {
+      root.innerHTML = `<div class="empty-media">No email templates are available. Apply the CRM database migration first.</div>`;
+      return;
+    }
+    const grid = document.createElement("div");
+    grid.className = "content-admin-grid";
+    emailTemplates.forEach((item) => {
+      const tile = document.createElement("button");
+      tile.className = "content-admin-tile";
+      tile.type = "button";
+      tile.innerHTML = `
+        <span class="content-admin-status">${escapeAttribute(item.category || "transactional")}</span>
+        <strong>${escapeAttribute(item.name || item.id)}</strong>
+        <small>${escapeAttribute(item.subject || "No subject")}</small>
+        <span>${escapeAttribute(item.enabled === false ? "Disabled" : "Enabled")}</span>
+      `;
+      tile.addEventListener("click", () => {
+        activeEmailTemplateId = item.id;
+        renderAll();
+      });
+      grid.append(tile);
+    });
+    root.append(grid);
+    return;
+  }
+
+  const back = document.createElement("button");
+  back.className = "button ghost product-back";
+  back.type = "button";
+  back.textContent = "Back to email templates";
+  back.addEventListener("click", () => {
+    activeEmailTemplateId = null;
+    renderAll();
+  });
+
+  const card = document.createElement("article");
+  card.className = "editor-card";
+  card.innerHTML = `
+    <div class="field-wide">
+      <p class="eyebrow">${escapeAttribute(template.category)}</p>
+      <h2>${escapeAttribute(template.name)}</h2>
+      <p class="admin-note">Available variables include {{customer_name}}, {{order_number}}, {{order_status}}, {{tracking_number}}, {{tracking_url}}, {{site_url}}, {{order_items}}, {{subtotal}}, {{shipping}}, {{total}}, and {{payment_details}}.</p>
+    </div>
+  `;
+  card.append(
+    field("Template name", template.name, (value) => { template.name = value; }),
+    field("Subject line", template.subject, (value) => { template.subject = value; }),
+    field("Preview text", template.preview_text, (value) => { template.preview_text = value; }, "textarea", true),
+    field("Header image", template.header_image_url, (value) => { template.header_image_url = value; }, "image", true, "email"),
+    field("Email body", template.body_html, (value) => { template.body_html = value; }, "richtext", true),
+    field("Enabled", template.enabled, (value) => { template.enabled = value; }, "checkbox")
+  );
+  const save = document.createElement("button");
+  save.className = "button primary";
+  save.type = "button";
+  save.textContent = "Save email template";
+  save.addEventListener("click", async () => {
+    save.disabled = true;
+    try {
+      const saved = await window.BeyondPepsSupabase.saveEmailTemplate(template);
+      Object.assign(template, saved || {});
+      toast("Email template saved.");
+    } catch (error) {
+      toast(`Template save failed: ${error.message}`);
+    } finally {
+      save.disabled = false;
+    }
+  });
+  card.append(save);
+  root.append(back, card);
+}
+
+function crmTile(title, summary, meta, onClick) {
+  const tile = document.createElement("button");
+  tile.className = "content-admin-tile";
+  tile.type = "button";
+  tile.innerHTML = `
+    <span class="content-admin-status">${escapeAttribute(meta)}</span>
+    <strong>${escapeAttribute(title)}</strong>
+    <span>${escapeAttribute(summary)}</span>
+  `;
+  tile.addEventListener("click", onClick);
+  return tile;
+}
+
+function renderCrmContacts(root) {
+  const contact = crmContacts.find((item) => item.id === activeCrmContactId);
+  if (contact) {
+    const back = document.createElement("button");
+    back.className = "button ghost product-back";
+    back.type = "button";
+    back.textContent = "Back to CRM contacts";
+    back.addEventListener("click", () => {
+      activeCrmContactId = null;
+      renderAll();
+    });
+    const card = document.createElement("article");
+    card.className = "editor-card";
+    card.innerHTML = `
+      <div class="field-wide">
+        <p class="eyebrow">${escapeAttribute(contact.marketing_status)}</p>
+        <h2>${escapeAttribute(contact.email)}</h2>
+        <p class="admin-note">Source: ${escapeAttribute(contact.source)} · Joined ${escapeAttribute(formatDate(contact.created_at))}</p>
+      </div>
+    `;
+    card.append(
+      field("Name", contact.full_name, (value) => { contact.full_name = value; }),
+      field("Email", contact.email, (value) => { contact.email = value; }, "email")
+    );
+    const status = document.createElement("label");
+    status.textContent = "Marketing status";
+    const select = document.createElement("select");
+    select.innerHTML = ["subscribed", "unsubscribed"].map((value) => `<option value="${value}"${contact.marketing_status === value ? " selected" : ""}>${value}</option>`).join("");
+    select.addEventListener("change", () => { contact.marketing_status = select.value; });
+    status.append(select);
+    const save = document.createElement("button");
+    save.className = "button primary";
+    save.type = "button";
+    save.textContent = "Save contact";
+    save.addEventListener("click", async () => {
+      try {
+        await window.BeyondPepsSupabase.updateCrmContact(contact.id, {
+          email: contact.email,
+          full_name: contact.full_name,
+          marketing_status: contact.marketing_status,
+          subscribed_at: contact.marketing_status === "subscribed" ? (contact.subscribed_at || new Date().toISOString()) : contact.subscribed_at,
+          unsubscribed_at: contact.marketing_status === "unsubscribed" ? new Date().toISOString() : null
+        });
+        toast("CRM contact saved.");
+      } catch (error) {
+        toast(`Contact save failed: ${error.message}`);
+      }
+    });
+    card.append(status, save);
+    root.append(back, card);
+    return;
+  }
+
+  const back = document.createElement("button");
+  back.className = "button ghost product-back";
+  back.type = "button";
+  back.textContent = "Back to CRM";
+  back.addEventListener("click", () => {
+    activeCrmSection = null;
+    renderAll();
+  });
+  const grid = document.createElement("div");
+  grid.className = "content-admin-grid";
+  crmContacts.forEach((item) => {
+    grid.append(crmTile(
+      item.full_name || item.email,
+      item.email,
+      item.marketing_status,
+      () => {
+        activeCrmContactId = item.id;
+        renderAll();
+      }
+    ));
+  });
+  root.append(back, grid);
+}
+
+function renderCrmSequenceEditor(root, sequence) {
+  const steps = crmSequenceSteps
+    .filter((step) => step.sequence_id === sequence.id)
+    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+  const back = document.createElement("button");
+  back.className = "button ghost product-back";
+  back.type = "button";
+  back.textContent = "Back to CRM sequences";
+  back.addEventListener("click", () => {
+    activeCrmSequenceId = null;
+    renderAll();
+  });
+  const card = document.createElement("article");
+  card.className = "editor-card";
+  card.append(
+    field("Sequence name", sequence.name, (value) => { sequence.name = value; }),
+    field("Description", sequence.description, (value) => { sequence.description = value; }, "textarea", true),
+    field("Active", sequence.active, (value) => { sequence.active = value; }, "checkbox")
+  );
+  const trigger = document.createElement("label");
+  trigger.textContent = "Enrollment trigger";
+  const triggerSelect = document.createElement("select");
+  [
+    ["all", "Accounts and mailing-list signups"],
+    ["account_created", "New accounts"],
+    ["mailing_list_signup", "Mailing-list signups"]
+  ].forEach(([value, label]) => {
+    triggerSelect.insertAdjacentHTML("beforeend", `<option value="${value}"${sequence.trigger_source === value ? " selected" : ""}>${label}</option>`);
+  });
+  triggerSelect.addEventListener("change", () => { sequence.trigger_source = triggerSelect.value; });
+  trigger.append(triggerSelect);
+
+  const stepList = document.createElement("div");
+  stepList.className = "crm-step-list field-wide";
+  const renderSteps = () => {
+    stepList.innerHTML = `<span class="admin-field-label">Scheduled emails</span>`;
+    steps.forEach((step, index) => {
+      const row = document.createElement("div");
+      row.className = "crm-step-row";
+      const templateSelect = document.createElement("select");
+      templateSelect.innerHTML = emailTemplates
+        .filter((item) => item.category === "marketing")
+        .map((item) => `<option value="${escapeAttribute(item.id)}"${step.template_id === item.id ? " selected" : ""}>${escapeAttribute(item.name)}</option>`)
+        .join("");
+      templateSelect.addEventListener("change", () => { step.template_id = templateSelect.value; });
+      const delay = document.createElement("input");
+      delay.type = "number";
+      delay.min = "0";
+      delay.value = step.delay_days || 0;
+      delay.setAttribute("aria-label", "Days after enrollment");
+      delay.addEventListener("input", () => { step.delay_days = Math.max(0, Number(delay.value || 0)); });
+      const remove = document.createElement("button");
+      remove.className = "remove-item";
+      remove.type = "button";
+      remove.textContent = "Remove";
+      remove.addEventListener("click", () => {
+        steps.splice(index, 1);
+        renderSteps();
+      });
+      row.append(templateSelect, delay, document.createTextNode(" days after enrollment"), remove);
+      stepList.append(row);
+    });
+  };
+  renderSteps();
+
+  const addStep = document.createElement("button");
+  addStep.className = "button ghost";
+  addStep.type = "button";
+  addStep.textContent = "Add scheduled email";
+  addStep.addEventListener("click", () => {
+    const defaultTemplate = emailTemplates.find((item) => item.category === "marketing");
+    if (!defaultTemplate) {
+      toast("Create a marketing email template first.");
+      return;
+    }
+    steps.push({
+      id: crypto.randomUUID(),
+      sequence_id: sequence.id,
+      template_id: defaultTemplate.id,
+      delay_days: 1,
+      sort_order: steps.length * 10
+    });
+    renderSteps();
+  });
+  const save = document.createElement("button");
+  save.className = "button primary";
+  save.type = "button";
+  save.textContent = "Save sequence";
+  save.addEventListener("click", async () => {
+    try {
+      const saved = await window.BeyondPepsSupabase.saveCrmSequence(sequence, steps);
+      Object.assign(sequence, saved || {});
+      await loadEmailAndCrm();
+      toast("CRM sequence saved.");
+      renderAll();
+    } catch (error) {
+      toast(`Sequence save failed: ${error.message}`);
+    }
+  });
+  card.append(trigger, stepList, addStep, save);
+  root.append(back, card);
+}
+
+function renderCrmSequences(root) {
+  const sequence = crmSequences.find((item) => item.id === activeCrmSequenceId);
+  if (sequence) {
+    renderCrmSequenceEditor(root, sequence);
+    return;
+  }
+  const back = document.createElement("button");
+  back.className = "button ghost product-back";
+  back.type = "button";
+  back.textContent = "Back to CRM";
+  back.addEventListener("click", () => {
+    activeCrmSection = null;
+    renderAll();
+  });
+  const add = document.createElement("button");
+  add.className = "button primary";
+  add.type = "button";
+  add.textContent = "Create sequence";
+  add.addEventListener("click", () => {
+    const sequence = {
+      id: crypto.randomUUID(),
+      name: "New sequence",
+      description: "",
+      trigger_source: "all",
+      active: false
+    };
+    crmSequences.unshift(sequence);
+    activeCrmSequenceId = sequence.id;
+    renderAll();
+  });
+  const grid = document.createElement("div");
+  grid.className = "content-admin-grid";
+  crmSequences.forEach((item) => {
+    const count = crmSequenceSteps.filter((step) => step.sequence_id === item.id).length;
+    grid.append(crmTile(item.name, item.description || `${count} scheduled emails`, item.active ? "Active" : "Inactive", () => {
+      activeCrmSequenceId = item.id;
+      renderAll();
+    }));
+  });
+  root.append(back, add, grid);
+}
+
+function renderCrm() {
+  const root = document.querySelector("#crmEditor");
+  if (!root) return;
+  root.innerHTML = "";
+  if (activeCrmSection === "contacts") {
+    renderCrmContacts(root);
+    return;
+  }
+  if (activeCrmSection === "sequences") {
+    renderCrmSequences(root);
+    return;
+  }
+  const subscribed = crmContacts.filter((item) => item.marketing_status === "subscribed").length;
+  const sent = crmSends.filter((item) => item.status === "sent").length;
+  const grid = document.createElement("div");
+  grid.className = "content-admin-grid";
+  grid.append(
+    crmTile("Contacts", `${subscribed} subscribed of ${crmContacts.length} total contacts`, "Audience", () => {
+      activeCrmSection = "contacts";
+      renderAll();
+    }),
+    crmTile("Automated sequences", `${crmSequences.length} sequences · ${sent} emails sent`, "Automation", () => {
+      activeCrmSection = "sequences";
+      renderAll();
+    })
+  );
+  root.append(grid);
+}
+
 function updateJsonEditor() {
   document.querySelector("#jsonEditor").value = JSON.stringify(content, null, 2);
 }
@@ -1429,6 +1816,8 @@ function renderAll() {
   renderSiteFields();
   renderShippingFields();
   renderPaymentFields();
+  renderEmailTemplates();
+  renderCrm();
   renderOrders();
   renderCollections();
   renderMediaLibrary();
@@ -1457,6 +1846,7 @@ function renderSummary() {
     <article><strong>${featuredCount}/${MAX_FEATURED_PRODUCTS}</strong><span>Featured</span></article>
     <article><strong>${orders.length}</strong><span>Orders</span></article>
     <article><strong>${mediaAssets.length}</strong><span>Media</span></article>
+    <article><strong>${crmContacts.length}</strong><span>CRM contacts</span></article>
     <article><strong>${content.references.length}</strong><span>References</span></article>
     <article><strong>${content.posts.length}</strong><span>Blog posts</span></article>
   `;
@@ -1501,6 +1891,26 @@ function setupActions() {
   document.querySelector("#refreshOrders")?.addEventListener("click", async () => {
     await loadAdminOrders();
     toast("Orders refreshed.");
+    renderAll();
+  });
+  document.querySelector("#refreshCrm")?.addEventListener("click", async () => {
+    await loadEmailAndCrm();
+    toast("CRM refreshed.");
+    renderAll();
+  });
+  document.querySelector("#addEmailTemplate")?.addEventListener("click", () => {
+    const id = `marketing_${Date.now()}`;
+    emailTemplates.push({
+      id,
+      name: "New marketing email",
+      category: "marketing",
+      subject: "Beyond Peps",
+      preview_text: "",
+      header_image_url: "/assets/bp-logo-mark.png",
+      body_html: "<h1>Beyond Peps</h1><p>Hi {{customer_name}},</p>",
+      enabled: true
+    });
+    activeEmailTemplateId = id;
     renderAll();
   });
   document.querySelectorAll("[data-add]").forEach((button) => {
@@ -1632,6 +2042,7 @@ requireAdmin().then(async (allowed) => {
   content = normalizeContent(data);
   await loadMediaAssets();
   await loadAdminOrders();
+  await loadEmailAndCrm();
   setupTabs();
   setupActions();
   renderAll();

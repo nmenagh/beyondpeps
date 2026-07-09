@@ -1,3 +1,5 @@
+const { escapeHtml, renderStoredEmail, sendResendEmail } = require("./_email");
+
 function json(response, statusCode, body) {
   response.statusCode = statusCode;
   response.setHeader("Content-Type", "application/json");
@@ -15,16 +17,6 @@ function money(cents = 0) {
     style: "currency",
     currency: "USD"
   }).format(Number(cents || 0) / 100);
-}
-
-function escapeHtml(value = "") {
-  return String(value).replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "\"": "&quot;",
-    "'": "&#039;"
-  })[char]);
 }
 
 function zelleDetails(settings = {}, order = {}) {
@@ -59,68 +51,49 @@ function itemsTable(items = []) {
   `;
 }
 
-function confirmationHtml(body = {}) {
-  const order = body.order || {};
-  return `
-    <div style="font-family:Arial,sans-serif;color:#102025;line-height:1.5">
-      <h1>Order received</h1>
-      <p>Thanks for your Beyond Peps order. Your order number is <strong>${escapeHtml(order.orderNumber || order.orderId || "")}</strong>.</p>
-      ${itemsTable(body.items || [])}
-      <p><strong>Subtotal:</strong> ${money(order.subtotalCents)}</p>
-      <p><strong>Shipping:</strong> ${money(order.shippingCents)}</p>
-      <p><strong>Total:</strong> ${money(order.totalCents)}</p>
-      ${zelleDetails(body.paymentSettings, order)}
-      <p>We will update your order after payment is matched and again when it ships.</p>
-    </div>
-  `;
+function confirmationFallback() {
+  return {
+    subject: "Beyond Peps order {{order_number}} received",
+    preview_text: "We received your Beyond Peps order.",
+    header_image_url: "/assets/bp-logo-mark.png",
+    body_html: "<h1>Order received</h1><p>Hi {{customer_name}},</p><p>Thanks for your Beyond Peps order. Your order number is <strong>{{order_number}}</strong>.</p>{{order_items}}<p><strong>Subtotal:</strong> {{subtotal}}</p><p><strong>Shipping:</strong> {{shipping}}</p><p><strong>Total:</strong> {{total}}</p>{{payment_details}}"
+  };
 }
 
-function shippedHtml(body = {}) {
-  const order = body.order || {};
-  const trackingUrl = order.trackingUrl ? `<p><a href="${escapeHtml(order.trackingUrl)}">Track your package</a></p>` : "";
-  return `
-    <div style="font-family:Arial,sans-serif;color:#102025;line-height:1.5">
-      <h1>Your order has shipped</h1>
-      <p>Order <strong>${escapeHtml(order.orderNumber || order.orderId || "")}</strong> is on the way.</p>
-      <p><strong>Carrier:</strong> ${escapeHtml(order.shippingProvider || "Shipping carrier")}</p>
-      <p><strong>Service:</strong> ${escapeHtml(order.shippingService || "Selected service")}</p>
-      <p><strong>Tracking:</strong> ${escapeHtml(order.trackingNumber || "Tracking will update soon")}</p>
-      ${trackingUrl}
-    </div>
-  `;
+function shippedFallback() {
+  return {
+    subject: "Your Beyond Peps order has shipped",
+    preview_text: "Your order is on the way.",
+    header_image_url: "/assets/bp-logo-mark.png",
+    body_html: "<h1>Your order has shipped</h1><p>Hi {{customer_name}},</p><p>Order <strong>{{order_number}}</strong> is on the way.</p><p><strong>Carrier:</strong> {{shipping_provider}}</p><p><strong>Service:</strong> {{shipping_service}}</p><p><strong>Tracking:</strong> {{tracking_number}}</p><p><a href=\"{{tracking_url}}\">Track your package</a></p>"
+  };
 }
 
-async function sendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL;
-  if (!apiKey || !from) return { sent: false, reason: "Email is not configured." };
+function statusFallback() {
+  return {
+    subject: "Beyond Peps order {{order_number}} update",
+    preview_text: "The status of your order has changed.",
+    header_image_url: "/assets/bp-logo-mark.png",
+    body_html: "<h1>Order update</h1><p>Hi {{customer_name}},</p><p>The status of order <strong>{{order_number}}</strong> is now <strong>{{order_status}}</strong>.</p>"
+  };
+}
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from,
-      to,
-      reply_to: process.env.EMAIL_REPLY_TO || undefined,
-      subject,
-      html
-    })
-  });
-
-  const text = await response.text();
-  let payload = {};
-  try {
-    payload = text ? JSON.parse(text) : {};
-  } catch {
-    payload = { message: text };
-  }
-  if (!response.ok) {
-    throw new Error(payload.message || payload.error || "Email failed to send.");
-  }
-  return { sent: true, id: payload.id };
+function emailTokens(body = {}) {
+  const order = body.order || {};
+  return {
+    customer_name: body.customer?.name || "there",
+    order_number: order.orderNumber || order.orderId || "",
+    order_status: order.status || "",
+    order_items: itemsTable(body.items || []),
+    subtotal: money(order.subtotalCents),
+    shipping: money(order.shippingCents),
+    total: money(order.totalCents),
+    payment_details: zelleDetails(body.paymentSettings, order),
+    shipping_provider: order.shippingProvider || "Shipping carrier",
+    shipping_service: order.shippingService || "Selected service",
+    tracking_number: order.trackingNumber || "Tracking will update soon",
+    tracking_url: order.trackingUrl || ""
+  };
 }
 
 module.exports = async function handler(request, response) {
@@ -136,11 +109,25 @@ module.exports = async function handler(request, response) {
     if (!to) throw new Error("Customer email is required.");
 
     const type = body.type || "order_confirmation";
-    const subject = type === "order_shipped"
-      ? `Your Beyond Peps order has shipped`
-      : `Beyond Peps order ${body.order?.orderNumber || ""} received`;
-    const html = type === "order_shipped" ? shippedHtml(body) : confirmationHtml(body);
-    const result = await sendEmail({ to, subject, html });
+    const statusTemplateId = body.order?.status ? `order_${String(body.order.status).toLowerCase()}` : "order_status_update";
+    const config = type === "order_shipped"
+      ? { templateId: "order_shipped", fallback: shippedFallback() }
+      : type === "order_status_update"
+        ? { templateId: statusTemplateId, fallback: statusFallback() }
+        : { templateId: "order_confirmation", fallback: confirmationFallback() };
+    const rendered = await renderStoredEmail({
+      ...config,
+      tokens: emailTokens(body),
+      htmlTokenNames: ["order_items", "payment_details"],
+      recipientEmail: to,
+      recipientName: body.customer?.name || ""
+    });
+    const orderKey = body.order?.orderId || body.order?.orderNumber || "order";
+    const result = await sendResendEmail({
+      to,
+      ...rendered,
+      idempotencyKey: `${type}-${orderKey}-${body.order?.status || "initial"}`
+    });
     json(response, 200, result);
   } catch (error) {
     json(response, 400, { error: error.message || "Unable to send email." });

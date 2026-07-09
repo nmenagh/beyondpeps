@@ -210,6 +210,22 @@ button {
   grid-column: 1 / -1;
 }
 
+.crm-step-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.crm-step-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6rem auto auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid rgba(188, 244, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
 .product-admin-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -832,7 +848,8 @@ button {
   .form-grid,
   .editor-card,
   .order-detail-card,
-  .shipping-method-grid {
+  .shipping-method-grid,
+  .crm-step-row {
     grid-template-columns: 1fr;
   }
 }

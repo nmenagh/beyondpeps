@@ -42,6 +42,8 @@
         <button class="tab is-active" data-panel="sitePanel" type="button">Site copy</button>
         <button class="tab" data-panel="shippingPanel" type="button">Shipping</button>
         <button class="tab" data-panel="paymentPanel" type="button">Payments</button>
+        <button class="tab" data-panel="emailTemplatesPanel" type="button">Email templates</button>
+        <button class="tab" data-panel="crmPanel" type="button">CRM</button>
         <button class="tab" data-panel="ordersPanel" type="button">Orders</button>
         <button class="tab" data-panel="productsPanel" type="button">Products</button>
         <button class="tab" data-panel="mediaPanel" type="button">Media</button>
@@ -88,6 +90,28 @@
             <button class="button ghost" id="refreshOrders" type="button">Refresh orders</button>
           </div>
           <div class="editor-list" id="ordersEditor"></div>
+        </div>
+
+        <div class="admin-panel" id="emailTemplatesPanel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Customer communication</p>
+              <h1>Email templates</h1>
+            </div>
+            <button class="button ghost" id="addEmailTemplate" type="button">Add email template</button>
+          </div>
+          <div class="editor-list" id="emailTemplatesEditor"></div>
+        </div>
+
+        <div class="admin-panel" id="crmPanel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Customer relationships</p>
+              <h1>CRM</h1>
+            </div>
+            <button class="button ghost" id="refreshCrm" type="button">Refresh CRM</button>
+          </div>
+          <div class="editor-list" id="crmEditor"></div>
         </div>
 
         <div class="admin-panel" id="productsPanel">
