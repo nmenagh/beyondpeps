@@ -22,6 +22,10 @@ let crmSequences = [];
 let crmSequenceSteps = [];
 let crmSends = [];
 let crmCampaigns = [];
+let analyticsData = null;
+let analyticsRange = null;
+let analyticsCharts = [];
+let activeAnalyticsPreset = "month_to_date";
 let activeOrderId = null;
 let activeProductIndex = null;
 let activeReferenceIndex = null;
@@ -2097,6 +2101,212 @@ function renderCrm() {
   root.append(grid);
 }
 
+function startOfDay(date) {
+  const value = new Date(date);
+  value.setHours(0, 0, 0, 0);
+  return value;
+}
+
+function endOfDay(date) {
+  const value = new Date(date);
+  value.setHours(23, 59, 59, 999);
+  return value;
+}
+
+function analyticsPresetRange(preset) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  if (preset === "today") return { start: startOfDay(now), end: now };
+  if (preset === "yesterday") {
+    const yesterday = new Date(year, month, now.getDate() - 1);
+    return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
+  }
+  if (preset === "last_month") {
+    return { start: new Date(year, month - 1, 1), end: endOfDay(new Date(year, month, 0)) };
+  }
+  if (preset === "last_3_calendar_months") {
+    return { start: new Date(year, month - 3, 1), end: endOfDay(new Date(year, month, 0)) };
+  }
+  if (preset === "year_to_date") return { start: new Date(year, 0, 1), end: now };
+  if (preset === "last_year") {
+    return { start: new Date(year - 1, 0, 1), end: endOfDay(new Date(year - 1, 11, 31)) };
+  }
+  return { start: new Date(year, month, 1), end: now };
+}
+
+function localDateValue(date) {
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+}
+
+async function loadAnalytics(range = analyticsPresetRange(activeAnalyticsPreset)) {
+  analyticsRange = range;
+  const root = document.querySelector("#analyticsDashboard");
+  if (root) root.innerHTML = `<div class="empty-media">Loading analytics...</div>`;
+  try {
+    analyticsData = await window.BeyondPepsSupabase.loadAnalyticsData(range.start.toISOString(), range.end.toISOString());
+    renderAnalyticsRange();
+    renderAnalyticsDashboard();
+  } catch (error) {
+    analyticsData = null;
+    if (root) root.innerHTML = `<div class="empty-media">Analytics unavailable: ${escapeAttribute(error.message)}</div>`;
+  }
+}
+
+function renderAnalyticsRange() {
+  const root = document.querySelector("#analyticsRangeBar");
+  if (!root) return;
+  const presets = [
+    ["today", "Today"],
+    ["yesterday", "Yesterday"],
+    ["month_to_date", "Month to date"],
+    ["last_month", "Last month"],
+    ["last_3_calendar_months", "Last 3 calendar months"],
+    ["year_to_date", "Year to date"],
+    ["last_year", "Last year"]
+  ];
+  const range = analyticsRange || analyticsPresetRange(activeAnalyticsPreset);
+  root.innerHTML = `
+    <div class="analytics-presets">
+      ${presets.map(([value, label]) => `<button class="analytics-preset${activeAnalyticsPreset === value ? " is-active" : ""}" type="button" data-analytics-preset="${value}">${label}</button>`).join("")}
+    </div>
+    <div class="analytics-custom-range">
+      <label>From<input id="analyticsStart" type="date" value="${localDateValue(range.start)}"></label>
+      <label>To<input id="analyticsEnd" type="date" value="${localDateValue(range.end)}"></label>
+      <button class="button primary" id="applyAnalyticsRange" type="button">Apply dates</button>
+    </div>
+  `;
+  root.querySelectorAll("[data-analytics-preset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeAnalyticsPreset = button.dataset.analyticsPreset;
+      loadAnalytics(analyticsPresetRange(activeAnalyticsPreset));
+    });
+  });
+  root.querySelector("#applyAnalyticsRange").addEventListener("click", () => {
+    const start = root.querySelector("#analyticsStart").value;
+    const end = root.querySelector("#analyticsEnd").value;
+    if (!start || !end || start > end) {
+      toast("Choose a valid analytics date range.");
+      return;
+    }
+    activeAnalyticsPreset = "custom";
+    loadAnalytics({
+      start: startOfDay(new Date(`${start}T00:00:00`)),
+      end: endOfDay(new Date(`${end}T00:00:00`))
+    });
+  });
+}
+
+function analyticsMoney(cents = 0) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(Number(cents || 0) / 100);
+}
+
+function eventCount(events, name) {
+  return events.filter((event) => event.event_name === name).length;
+}
+
+function chartBucket(date, range) {
+  const span = range.end - range.start;
+  return span > 120 * 86400000
+    ? new Intl.DateTimeFormat("en-US", { month: "short", year: "2-digit" }).format(date)
+    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+}
+
+function makeChart(canvas, config) {
+  if (!window.Chart || !canvas) return;
+  const chart = new window.Chart(canvas, config);
+  analyticsCharts.push(chart);
+}
+
+function renderAnalyticsDashboard() {
+  const root = document.querySelector("#analyticsDashboard");
+  if (!root || !analyticsData || !analyticsRange) return;
+  analyticsCharts.forEach((chart) => chart.destroy());
+  analyticsCharts = [];
+
+  const events = analyticsData.events || [];
+  const orders = analyticsData.orders || [];
+  const validOrders = orders.filter((order) => !["cancelled", "refunded"].includes(String(order.status || "").toLowerCase()));
+  const revenueCents = validOrders.reduce((sum, order) => sum + Number(order.total_cents || 0), 0);
+  const units = validOrders.flatMap((order) => order.order_items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const visitors = new Set(events.filter((event) => event.event_name === "page_view").map((event) => event.session_id)).size;
+  const purchasers = new Set(events.filter((event) => event.event_name === "purchase").map((event) => event.session_id)).size;
+  const conversion = visitors ? purchasers / visitors * 100 : 0;
+  const averageOrder = validOrders.length ? revenueCents / validOrders.length : 0;
+  const lowStock = (analyticsData.products || []).filter((product) => Number(product.inventory_count) <= 5).length;
+
+  const kpis = [
+    ["Gross revenue", analyticsMoney(revenueCents), `${validOrders.length} valid orders`],
+    ["Orders", validOrders.length, `${units} units sold`],
+    ["Average order value", analyticsMoney(averageOrder), "Revenue per order"],
+    ["Visitors", visitors, `${eventCount(events, "page_view")} page views`],
+    ["Conversion rate", `${conversion.toFixed(1)}%`, `${purchasers} purchasing sessions`],
+    ["New CRM contacts", (analyticsData.contacts || []).length, `${(analyticsData.sends || []).length} emails sent`],
+    ["Low-stock products", lowStock, "5 units or fewer"],
+    ["Add-to-cart events", eventCount(events, "add_to_cart"), `${eventCount(events, "begin_checkout")} checkout starts`]
+  ];
+
+  root.innerHTML = `
+    <div class="analytics-range-summary">${escapeAttribute(formatDate(analyticsRange.start))} through ${escapeAttribute(formatDate(analyticsRange.end))}</div>
+    <div class="analytics-kpi-grid">
+      ${kpis.map(([label, value, detail]) => `<article><span>${escapeAttribute(label)}</span><strong>${escapeAttribute(value)}</strong><small>${escapeAttribute(detail)}</small></article>`).join("")}
+    </div>
+    <div class="analytics-chart-grid">
+      <section class="analytics-chart analytics-chart-wide"><h2>Revenue and orders</h2><canvas id="revenueChart"></canvas></section>
+      <section class="analytics-chart"><h2>Shopping funnel</h2><canvas id="funnelChart"></canvas></section>
+      <section class="analytics-chart"><h2>Order status</h2><canvas id="statusChart"></canvas></section>
+      <section class="analytics-chart analytics-chart-wide"><h2>Top products</h2><canvas id="productChart"></canvas></section>
+    </div>
+  `;
+
+  const buckets = new Map();
+  validOrders.forEach((order) => {
+    const key = chartBucket(new Date(order.created_at), analyticsRange);
+    const current = buckets.get(key) || { revenue: 0, orders: 0 };
+    current.revenue += Number(order.total_cents || 0) / 100;
+    current.orders += 1;
+    buckets.set(key, current);
+  });
+  const productTotals = new Map();
+  validOrders.flatMap((order) => order.order_items || []).forEach((item) => {
+    const name = item.product_title || item.product_name || item.product_slug || "Product";
+    productTotals.set(name, (productTotals.get(name) || 0) + Number(item.total_cents || 0) / 100);
+  });
+  const statuses = new Map();
+  orders.forEach((order) => {
+    const status = order.status || "pending";
+    statuses.set(status, (statuses.get(status) || 0) + 1);
+  });
+  const chartText = "#dcecef";
+  const grid = "rgba(188,244,255,.1)";
+  const common = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: chartText } } }, scales: { x: { ticks: { color: chartText }, grid: { color: grid } }, y: { beginAtZero: true, ticks: { color: chartText }, grid: { color: grid } } } };
+  makeChart(root.querySelector("#revenueChart"), {
+    type: "bar",
+    data: { labels: [...buckets.keys()], datasets: [
+      { label: "Revenue", data: [...buckets.values()].map((item) => item.revenue), backgroundColor: "rgba(66,228,255,.62)", borderColor: "#42e4ff", borderWidth: 1 },
+      { label: "Orders", data: [...buckets.values()].map((item) => item.orders), type: "line", borderColor: "#65ffc8", backgroundColor: "#65ffc8", tension: 0.3, yAxisID: "y1" }
+    ] },
+    options: { ...common, scales: { ...common.scales, y1: { beginAtZero: true, position: "right", ticks: { color: chartText }, grid: { drawOnChartArea: false } } } }
+  });
+  makeChart(root.querySelector("#funnelChart"), {
+    type: "bar",
+    data: { labels: ["Product views", "Add to cart", "Checkout", "Purchase"], datasets: [{ data: ["view_item", "add_to_cart", "begin_checkout", "purchase"].map((name) => eventCount(events, name)), backgroundColor: ["#42e4ff", "#50e9df", "#5bf5cf", "#65ffc8"] }] },
+    options: { ...common, indexAxis: "y", plugins: { legend: { display: false } } }
+  });
+  makeChart(root.querySelector("#statusChart"), {
+    type: "doughnut",
+    data: { labels: [...statuses.keys()], datasets: [{ data: [...statuses.values()], backgroundColor: ["#42e4ff", "#65ffc8", "#f6c85f", "#ff8a80", "#9e8cff"] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { color: chartText } } } }
+  });
+  const topProducts = [...productTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  makeChart(root.querySelector("#productChart"), {
+    type: "bar",
+    data: { labels: topProducts.map(([name]) => name), datasets: [{ label: "Product revenue", data: topProducts.map(([, value]) => value), backgroundColor: "rgba(101,255,200,.58)", borderColor: "#65ffc8", borderWidth: 1 }] },
+    options: common
+  });
+}
+
 function updateJsonEditor() {
   document.querySelector("#jsonEditor").value = JSON.stringify(content, null, 2);
 }
@@ -2109,6 +2319,7 @@ function renderAll() {
   renderPaymentFields();
   renderEmailTemplates();
   renderCrm();
+  renderAnalyticsRange();
   renderOrders();
   renderCollections();
   renderMediaLibrary();
@@ -2168,6 +2379,7 @@ function setupTabs() {
       document.querySelectorAll(".admin-panel").forEach((node) => node.classList.remove("is-active"));
       tab.classList.add("is-active");
       document.querySelector(`#${tab.dataset.panel}`).classList.add("is-active");
+      if (tab.dataset.panel === "analyticsPanel" && !analyticsData) loadAnalytics();
     });
   });
 }
@@ -2188,6 +2400,9 @@ function setupActions() {
     await loadEmailAndCrm();
     toast("CRM refreshed.");
     renderAll();
+  });
+  document.querySelector("#refreshAnalytics")?.addEventListener("click", () => {
+    loadAnalytics(analyticsRange || analyticsPresetRange(activeAnalyticsPreset));
   });
   const addEmailTemplate = (category) => {
     const id = `${category}_${Date.now()}`;

@@ -380,6 +380,7 @@
 
     try {
       await window.BeyondPepsSupabase.signIn(email, password);
+      window.BeyondPepsAnalytics?.track("login");
       setStatus(authStatus, "Signed in.");
       await showProfile();
       window.BeyondPepsSite?.updateAccountPill?.();
@@ -418,6 +419,7 @@
       const result = await window.BeyondPepsSupabase.signUp(email, password, {
         full_name: [firstName, lastName].filter(Boolean).join(" ")
       });
+      window.BeyondPepsAnalytics?.track("sign_up");
       signUpForm.reset();
 
       if (result.access_token) {

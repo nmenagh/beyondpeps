@@ -325,6 +325,7 @@ function setupNewsletterSignup() {
       if (!response.ok) throw new Error(data.error || "Unable to join the mailing list.");
       form.reset();
       status.textContent = "You're on the list. Watch your inbox for Beyond Peps updates.";
+      window.BeyondPepsAnalytics?.track("newsletter_signup");
     } catch (error) {
       status.textContent = error.message;
     } finally {
@@ -332,6 +333,37 @@ function setupNewsletterSignup() {
     }
   });
 }
+
+function setupAnalyticsTracking() {
+  const getId = (storage, key) => {
+    let value = storage.getItem(key);
+    if (!value) {
+      value = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      storage.setItem(key, value);
+    }
+    return value;
+  };
+  const anonymousId = getId(localStorage, "beyondPepsAnalyticsVisitor");
+  const sessionId = getId(sessionStorage, "beyondPepsAnalyticsSession");
+  const params = new URLSearchParams(window.location.search);
+  const campaign = Object.fromEntries(["utm_source", "utm_medium", "utm_campaign"].map((key) => [key, params.get(key)]).filter(([, value]) => value));
+  const track = (eventName, details = {}) => window.BeyondPepsSupabase?.trackAnalyticsEvent?.(eventName, {
+    sessionId,
+    anonymousId,
+    pagePath: window.location.pathname,
+    ...details
+  });
+  window.BeyondPepsAnalytics = { track };
+  track("page_view", {
+    metadata: {
+      title: document.title,
+      referrer: document.referrer || "",
+      ...campaign
+    }
+  });
+}
+
+setupAnalyticsTracking();
 
 loadContent().then((content) => {
   window.BeyondPepsContent = content;

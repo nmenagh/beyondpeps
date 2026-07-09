@@ -21,6 +21,11 @@
     }
 
     document.title = `${product.name} | Beyond Peps`;
+    window.BeyondPepsAnalytics?.track("view_item", {
+      productId: product.id,
+      valueCents: Math.round(Number(product.price || 0) * 100),
+      metadata: { product_name: product.name, category: product.category || "" }
+    });
     const stockLevel = Number.isFinite(Number(product.stockLevel)) ? Math.max(0, Math.floor(Number(product.stockLevel))) : null;
     const isOutOfStock = stockLevel === 0;
     const galleryImages = normalizeGalleryImages(product);
@@ -69,6 +74,13 @@
     document.querySelector("#addToCart")?.addEventListener("click", async () => {
       const quantity = Math.max(1, Number.parseInt(document.querySelector("#productQuantity").value, 10) || 1);
       const result = window.BeyondPepsCart.addItem(product, quantity);
+      if (result.quantity) {
+        window.BeyondPepsAnalytics?.track("add_to_cart", {
+          productId: product.id,
+          valueCents: Math.round(Number(product.price || 0) * Number(result.quantity) * 100),
+          metadata: { product_name: product.name, quantity: result.quantity }
+        });
+      }
       const feedback = document.querySelector("#cartFeedback");
       feedback.textContent = result.message || "Added to cart.";
       await window.BeyondPepsCart.reserveCart();

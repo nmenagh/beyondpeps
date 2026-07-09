@@ -387,6 +387,109 @@ button {
   color: var(--muted);
 }
 
+.analytics-range-bar {
+  display: grid;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.analytics-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.analytics-preset {
+  min-height: 2.5rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.analytics-preset:hover,
+.analytics-preset.is-active {
+  border-color: var(--mint);
+  background: rgba(91, 245, 207, 0.12);
+  color: #ffffff;
+}
+
+.analytics-custom-range {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(160px, 220px) auto;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.analytics-dashboard {
+  display: grid;
+  gap: 1rem;
+}
+
+.analytics-range-summary {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.analytics-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.analytics-kpi-grid article {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 8.5rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: radial-gradient(circle at 100% 0%, rgba(66, 228, 255, 0.13), transparent 10rem), rgba(255, 255, 255, 0.05);
+}
+
+.analytics-kpi-grid span,
+.analytics-kpi-grid small {
+  color: var(--muted);
+}
+
+.analytics-kpi-grid strong {
+  color: #ffffff;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.analytics-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.analytics-chart {
+  min-height: 350px;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.analytics-chart-wide {
+  grid-column: 1 / -1;
+}
+
+.analytics-chart h2 {
+  margin-bottom: 0.8rem;
+  font-size: 1.15rem;
+}
+
+.analytics-chart canvas {
+  width: 100% !important;
+  height: 290px !important;
+}
+
 .order-admin-tile,
 .content-admin-tile {
   display: grid;
@@ -1019,7 +1122,14 @@ button {
   .crm-step-row,
   .email-test-send,
   .email-campaign-scheduler,
-  .campaign-row {
+  .campaign-row,
+  .analytics-custom-range,
+  .analytics-kpi-grid,
+  .analytics-chart-grid {
     grid-template-columns: 1fr;
+  }
+
+  .analytics-chart-wide {
+    grid-column: auto;
   }
 }

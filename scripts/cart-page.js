@@ -348,6 +348,13 @@
       return;
     }
 
+    if (!window.__beyondPepsCartViewed) {
+      window.__beyondPepsCartViewed = true;
+      window.BeyondPepsAnalytics?.track("view_cart", {
+        valueCents: Math.round(items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100)
+      });
+    }
+
     list.innerHTML = items.map((item) => `
       <article class="cart-item glass-panel" data-cart-item="${escapeHtml(item.id)}">
         ${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}">` : ""}
@@ -419,6 +426,10 @@
           const rate = rates.find((item) => item.id === input.value);
           if (rate) {
             selectedShippingRate = rate;
+            window.BeyondPepsAnalytics?.track("add_shipping_info", {
+              valueCents: Math.round(Number(rate.amount || 0) * 100),
+              metadata: { provider: rate.provider || "", servicelevel: rate.servicelevel || "" }
+            });
             await renderCart();
           }
         });
@@ -450,6 +461,9 @@
         await renderCart("Please choose an available payment method.");
         return;
       }
+      window.BeyondPepsAnalytics?.track("begin_checkout", {
+        valueCents: Math.round(items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100)
+      });
       const result = await window.BeyondPepsCart.validateCheckout();
       if (!result.ok) {
         const unavailable = (result.unavailable || []).map((item) => `${item.id}: ${item.available ?? 0} available`).join("; ");
@@ -466,6 +480,11 @@
           items
         });
         if (!order?.ok) throw new Error(order?.message || "Order could not be placed.");
+        window.BeyondPepsAnalytics?.track("purchase", {
+          orderId: order.orderId || null,
+          valueCents: order.totalCents,
+          metadata: { order_number: order.orderNumber || "", item_count: items.reduce((sum, item) => sum + item.quantity, 0) }
+        });
 
         const emailResult = await sendOrderConfirmation(order, address, items, readShippingRate(), paymentSettings);
         window.BeyondPepsCart.clearCart();

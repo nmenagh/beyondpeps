@@ -44,6 +44,7 @@
         <button class="tab" data-panel="paymentPanel" type="button">Payments</button>
         <button class="tab" data-panel="emailTemplatesPanel" type="button">Email templates</button>
         <button class="tab" data-panel="crmPanel" type="button">CRM</button>
+        <button class="tab" data-panel="analyticsPanel" type="button">Analytics</button>
         <button class="tab" data-panel="ordersPanel" type="button">Orders</button>
         <button class="tab" data-panel="productsPanel" type="button">Products</button>
         <button class="tab" data-panel="mediaPanel" type="button">Media</button>
@@ -117,6 +118,20 @@
           <div class="editor-list" id="crmEditor"></div>
         </div>
 
+        <div class="admin-panel" id="analyticsPanel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Performance</p>
+              <h1>Analytics</h1>
+            </div>
+            <button class="button ghost" id="refreshAnalytics" type="button">Refresh analytics</button>
+          </div>
+          <div class="analytics-range-bar" id="analyticsRangeBar"></div>
+          <div class="analytics-dashboard" id="analyticsDashboard">
+            <div class="empty-media">Choose a date range to load analytics.</div>
+          </div>
+        </div>
+
         <div class="admin-panel" id="productsPanel">
           <div class="panel-heading">
             <p class="eyebrow">Catalog</p>
@@ -178,6 +193,7 @@
     <script src="../scripts/content-defaults.js"></script>
     <script src="../scripts/supabase-env.js"></script>
     <script src="../scripts/supabase-api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
     <script src="admin.js"></script>
   </body>
 </html>

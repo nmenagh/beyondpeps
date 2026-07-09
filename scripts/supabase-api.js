@@ -648,6 +648,40 @@
     return { contacts, sequences, steps, sends, campaigns };
   }
 
+  async function trackAnalyticsEvent(eventName, details = {}) {
+    if (!isConfigured()) return;
+    try {
+      await request("/rest/v1/rpc/track_analytics_event", {
+        method: "POST",
+        body: {
+          p_event_name: eventName,
+          p_session_id: details.sessionId || "",
+          p_anonymous_id: details.anonymousId || "",
+          p_page_path: details.pagePath || window.location.pathname,
+          p_product_id: details.productId || null,
+          p_order_id: details.orderId || null,
+          p_value_cents: Number.isFinite(Number(details.valueCents)) ? Math.round(Number(details.valueCents)) : null,
+          p_metadata: details.metadata || {}
+        }
+      });
+    } catch (error) {
+      console.warn("Analytics event unavailable.", error);
+    }
+  }
+
+  async function loadAnalyticsData(startIso, endIso) {
+    const start = encodeURIComponent(startIso);
+    const end = encodeURIComponent(endIso);
+    const [events, analyticsOrders, contacts, sends, products] = await Promise.all([
+      request(`/rest/v1/analytics_events?occurred_at=gte.${start}&occurred_at=lte.${end}&select=*&order=occurred_at.asc`),
+      request(`/rest/v1/orders?created_at=gte.${start}&created_at=lte.${end}&select=*,order_items(*)&order=created_at.asc`),
+      request(`/rest/v1/crm_contacts?created_at=gte.${start}&created_at=lte.${end}&select=*`),
+      request(`/rest/v1/crm_sends?sent_at=gte.${start}&sent_at=lte.${end}&select=*`),
+      request("/rest/v1/products?select=slug,name,title,inventory_count,status")
+    ]);
+    return { events, orders: analyticsOrders, contacts, sends, products };
+  }
+
   async function scheduleCrmCampaign(campaign = {}) {
     const rows = await request("/rest/v1/crm_campaigns", {
       method: "POST",
@@ -746,6 +780,7 @@
     loadProfile,
     loadOrders,
     loadAdminOrders,
+    loadAnalyticsData,
     loadEmailTemplates,
     loadCrmDashboard,
     loadContent,
@@ -764,6 +799,7 @@
     session,
     signIn,
     signUp,
+    trackAnalyticsEvent,
     updateAuthUser,
     uploadMedia
   };
