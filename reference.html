@@ -40,6 +40,12 @@
       </section>
 
       <section class="section page-section reference-detail-layout">
+        <aside class="glass-panel reference-guide-tools" id="referenceGuideTools" hidden>
+          <label for="referenceGuideSearch">Search this guide</label>
+          <input id="referenceGuideSearch" type="search" placeholder="Search peptide names..." autocomplete="off">
+          <p id="referenceGuideCount">Select a section to view.</p>
+          <nav id="referenceToc" aria-label="Reference guide sections"></nav>
+        </aside>
         <article class="glass-panel reference-detail-card">
           <div class="rich-content" id="referenceBody"></div>
           <div class="inline-actions">

@@ -634,13 +634,108 @@ h3 {
 
 .reference-detail-layout {
   display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: start;
   justify-items: center;
+}
+
+.reference-detail-layout.is-guide-mode {
+  grid-template-columns: minmax(240px, 0.34fr) minmax(0, 1fr);
 }
 
 .reference-detail-card {
   width: min(880px, 100%);
   padding: clamp(1.1rem, 4vw, 2rem);
   border-radius: var(--radius);
+}
+
+.reference-guide-tools {
+  position: sticky;
+  top: 6.5rem;
+  width: min(320px, 100%);
+  max-height: calc(100vh - 8rem);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.reference-guide-tools[hidden] {
+  display: none;
+}
+
+.reference-guide-tools label {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 820;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.reference-guide-tools input {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(1, 7, 11, 0.55);
+  color: var(--text);
+  outline: none;
+}
+
+.reference-guide-tools input:focus {
+  border-color: rgba(101, 255, 200, 0.72);
+  box-shadow: 0 0 0 3px rgba(101, 255, 200, 0.1);
+}
+
+.reference-guide-tools p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.reference-guide-tools nav {
+  display: grid;
+  gap: 0.35rem;
+  max-height: min(56vh, 33rem);
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+.reference-guide-tools nav a {
+  display: block;
+  padding: 0.62rem 0.72rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 740;
+}
+
+.reference-guide-tools nav a:hover,
+.reference-guide-tools nav a.is-active {
+  border-color: rgba(101, 255, 200, 0.36);
+  background: rgba(101, 255, 200, 0.08);
+  color: var(--text);
+}
+
+.reference-guide-section {
+  display: none;
+}
+
+.reference-guide-section.is-active {
+  display: grid;
+  gap: 1rem;
+}
+
+.reference-guide-intro {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(188, 244, 255, 0.16);
 }
 
 .rich-content {
@@ -1920,6 +2015,23 @@ legend {
   .account-shell,
   .account-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .reference-detail-layout,
+  .reference-detail-layout.is-guide-mode {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-guide-tools {
+    position: static;
+    width: 100%;
+    max-height: none;
+    justify-self: stretch;
+  }
+
+  .reference-guide-tools nav {
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    max-height: 18rem;
   }
 
   .cart-actions,
