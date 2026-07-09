@@ -1466,6 +1466,74 @@ function renderCollections() {
   });
 }
 
+function previewEmailTemplate(template = {}) {
+  let dialog = document.querySelector("#emailPreviewDialog");
+  if (!dialog) {
+    dialog = document.createElement("dialog");
+    dialog.id = "emailPreviewDialog";
+    dialog.className = "email-preview-dialog";
+    dialog.innerHTML = `
+      <div class="email-preview-heading">
+        <div>
+          <p class="eyebrow">Template preview</p>
+          <h2 id="emailPreviewTitle">Email preview</h2>
+          <p id="emailPreviewSubject"></p>
+        </div>
+        <button class="button ghost" id="closeEmailPreview" type="button">Close</button>
+      </div>
+      <iframe id="emailPreviewFrame" title="Rendered email template preview" sandbox></iframe>
+    `;
+    document.body.append(dialog);
+    dialog.querySelector("#closeEmailPreview").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  }
+
+  const sampleTokens = {
+    customer_name: "Jamie Researcher",
+    order_number: "BP-1048",
+    order_status: "Paid",
+    tracking_number: "1Z999AA10123456784",
+    tracking_url: "https://www.ups.com/track",
+    shipping_provider: "UPS",
+    shipping_service: "Ground",
+    site_url: "https://beyondpeps.com",
+    subtotal: "$75.00",
+    shipping: "$8.95",
+    total: "$83.95",
+    order_items: "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td style=\"padding:8px 0;border-bottom:1px solid #d8e7ea\">Research supply x 1</td><td align=\"right\" style=\"padding:8px 0;border-bottom:1px solid #d8e7ea\">$75.00</td></tr></table>",
+    payment_details: "<h2>Payment details</h2><p>Your payment instructions or confirmation details appear here.</p>"
+  };
+  const htmlTokens = new Set(["order_items", "payment_details"]);
+  const replace = (source = "") => String(source).replace(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi, (_match, key) => {
+    const value = sampleTokens[key] ?? `{{${key}}}`;
+    return htmlTokens.has(key) ? value : escapeAttribute(value);
+  });
+  const headerImage = template.header_image_url
+    ? new URL(resolveAdminImageUrl(template.header_image_url), window.location.href).href
+    : new URL("../assets/bp-logo-mark.png", window.location.href).href;
+  const previewHtml = `<!doctype html>
+    <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+    <body style="margin:0;background:#07161c;color:#eaf7f8;font-family:Arial,sans-serif">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center" style="padding:28px 14px">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;background:#10252d;border:1px solid #315966;border-radius:8px">
+          <tr><td align="center" style="padding:26px 28px 10px"><img src="${escapeAttribute(headerImage)}" alt="Beyond Peps" style="display:block;max-width:180px;max-height:110px;width:auto;height:auto"></td></tr>
+          <tr><td style="padding:22px 32px 32px;color:#eaf7f8;font-size:16px;line-height:1.6">${replace(template.body_html || "")}</td></tr>
+          <tr><td style="padding:20px 32px;border-top:1px solid #315966;color:#9eb6bd;font-size:12px;line-height:1.5">
+            <p style="margin:0 0 6px"><a href="#" style="color:#398e88">Unsubscribe from marketing emails</a></p>
+            <p style="margin:0">Unsubscribing affects marketing messages only. Order confirmations, shipping notices, and account-required emails will continue.</p>
+          </td></tr>
+        </table>
+      </td></tr></table>
+    </body></html>`;
+
+  dialog.querySelector("#emailPreviewTitle").textContent = template.name || "Email preview";
+  dialog.querySelector("#emailPreviewSubject").textContent = `Subject: ${replace(template.subject || "Beyond Peps")}`;
+  dialog.querySelector("#emailPreviewFrame").srcdoc = previewHtml;
+  dialog.showModal();
+}
+
 function renderEmailTemplates() {
   const root = document.querySelector("#emailTemplatesEditor");
   if (!root) return;
@@ -1489,19 +1557,27 @@ function renderEmailTemplates() {
       const grid = document.createElement("div");
       grid.className = "content-admin-grid";
       items.forEach((item) => {
-        const tile = document.createElement("button");
-        tile.className = "content-admin-tile";
-        tile.type = "button";
-        tile.innerHTML = `
+        const tile = document.createElement("article");
+        tile.className = "email-template-tile";
+        const open = document.createElement("button");
+        open.className = "content-admin-tile";
+        open.type = "button";
+        open.innerHTML = `
           <span class="content-admin-status">${escapeAttribute(item.category || "transactional")}</span>
           <strong>${escapeAttribute(item.name || item.id)}</strong>
           <small>${escapeAttribute(item.subject || "No subject")}</small>
           <span>${escapeAttribute(item.enabled === false ? "Disabled" : "Enabled")}</span>
         `;
-        tile.addEventListener("click", () => {
+        open.addEventListener("click", () => {
           activeEmailTemplateId = item.id;
           renderAll();
         });
+        const preview = document.createElement("button");
+        preview.className = "button ghost email-tile-preview";
+        preview.type = "button";
+        preview.textContent = "Preview";
+        preview.addEventListener("click", () => previewEmailTemplate(item));
+        tile.append(open, preview);
         grid.append(tile);
       });
       if (!items.length) grid.innerHTML = `<div class="empty-media">No ${escapeAttribute(category)} templates yet.</div>`;
@@ -1553,7 +1629,15 @@ function renderEmailTemplates() {
       save.disabled = false;
     }
   });
-  card.append(save);
+  const actions = document.createElement("div");
+  actions.className = "inline-actions field-wide";
+  const preview = document.createElement("button");
+  preview.className = "button ghost";
+  preview.type = "button";
+  preview.textContent = "Preview template";
+  preview.addEventListener("click", () => previewEmailTemplate(template));
+  actions.append(save, preview);
+  card.append(actions);
 
   if (template.category === "blast") {
     const scheduler = document.createElement("section");

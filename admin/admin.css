@@ -269,6 +269,66 @@ button {
   color: var(--muted);
 }
 
+.email-template-tile {
+  position: relative;
+  display: grid;
+}
+
+.email-template-tile .content-admin-tile {
+  width: 100%;
+  padding-bottom: 4.5rem;
+}
+
+.email-tile-preview {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  left: 0.8rem;
+  min-height: 2.7rem;
+}
+
+.email-preview-dialog {
+  width: min(960px, calc(100% - 2rem));
+  height: min(860px, calc(100% - 2rem));
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: #08161c;
+  color: var(--text);
+}
+
+.email-preview-dialog::backdrop {
+  background: rgba(0, 7, 10, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.email-preview-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.email-preview-heading h2 {
+  margin-bottom: 0.35rem;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.email-preview-heading p:last-child {
+  margin: 0;
+  color: var(--muted);
+}
+
+.email-preview-dialog iframe {
+  width: 100%;
+  height: calc(100% - 7.4rem);
+  border: 0;
+  background: #07161c;
+}
+
 .email-campaign-scheduler {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 0.7fr) auto;
