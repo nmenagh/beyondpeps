@@ -91,8 +91,10 @@
       const target = findAnchorTarget(id);
       if (!target) return;
       event.preventDefault();
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
       history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+      const headerOffset = window.matchMedia("(max-width: 860px)").matches ? 96 : 120;
+      const top = target.getBoundingClientRect().top + window.scrollY - headerOffset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
     });
   }
 

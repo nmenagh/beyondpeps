@@ -648,6 +648,7 @@ h3 {
   gap: 1rem;
   color: var(--muted);
   font-size: clamp(1rem, 1.4vw, 1.12rem);
+  overflow-wrap: anywhere;
 }
 
 .rich-content p {
@@ -681,11 +682,18 @@ h3 {
 }
 
 .rich-content table {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
-  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
+}
+
+.rich-content img {
+  max-width: 100%;
+  height: auto;
 }
 
 .rich-content th,
@@ -1982,6 +1990,24 @@ legend {
   .newsletter-band,
   .newsletter-form {
     grid-template-columns: 1fr;
+  }
+
+  .reference-detail-card {
+    padding: 1rem;
+  }
+
+  .rich-content {
+    display: block;
+    font-size: 1rem;
+  }
+
+  .rich-content > * + * {
+    margin-top: 1rem;
+  }
+
+  .rich-content [id],
+  .rich-content [name] {
+    scroll-margin-top: 6rem;
   }
 }
 
