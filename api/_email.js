@@ -109,7 +109,7 @@ function emailWrapper({ bodyHtml, headerImageUrl, previewText, unsubscribeUrl })
         <tr><td align="center" style="padding:28px 14px">
           <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;background:#10252d;border:1px solid #315966;border-radius:8px">
             <tr><td align="center" style="padding:26px 28px 10px">
-              ${image ? `<img src="${escapeHtml(image)}" alt="Beyond Peps" style="display:block;max-width:180px;max-height:110px;width:auto;height:auto">` : ""}
+              ${image ? `<img src="${escapeHtml(image)}" alt="Beyond Peps" style="display:block;max-width:360px;max-height:220px;width:auto;height:auto">` : ""}
             </td></tr>
             <tr><td style="padding:22px 32px 32px;color:#eaf7f8;font-size:16px;line-height:1.6">${bodyHtml}</td></tr>
             <tr><td style="padding:20px 32px;border-top:1px solid #315966;color:#9eb6bd;font-size:12px;line-height:1.5">

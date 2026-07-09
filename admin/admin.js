@@ -1569,7 +1569,7 @@ function previewEmailTemplate(template = {}) {
     <body style="margin:0;background:#07161c;color:#eaf7f8;font-family:Arial,sans-serif">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center" style="padding:28px 14px">
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;background:#10252d;border:1px solid #315966;border-radius:8px">
-          <tr><td align="center" style="padding:26px 28px 10px"><img src="${escapeAttribute(headerImage)}" alt="Beyond Peps" style="display:block;max-width:180px;max-height:110px;width:auto;height:auto"></td></tr>
+          <tr><td align="center" style="padding:26px 28px 10px"><img src="${escapeAttribute(headerImage)}" alt="Beyond Peps" style="display:block;max-width:360px;max-height:220px;width:auto;height:auto"></td></tr>
           <tr><td style="padding:22px 32px 32px;color:#eaf7f8;font-size:16px;line-height:1.6">${replace(template.body_html || "")}</td></tr>
           <tr><td style="padding:20px 32px;border-top:1px solid #315966;color:#9eb6bd;font-size:12px;line-height:1.5">
             <p style="margin:0 0 6px"><a href="#" style="color:#398e88">Unsubscribe from marketing emails</a></p>
