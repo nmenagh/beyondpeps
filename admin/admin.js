@@ -532,14 +532,31 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
       ["underline", "Underline"],
       ["insertUnorderedList", "Bullet list"],
       ["insertOrderedList", "Numbered list"],
+      ["createLink", "Link"],
       ["formatBlock", "Heading", "H3"],
       ["formatBlock", "Paragraph", "P"]
     ].forEach(([command, text, argument]) => {
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = text;
+      button.addEventListener("mousedown", (event) => event.preventDefault());
       button.addEventListener("click", () => {
         editor.focus();
+        if (command === "createLink") {
+          let href = window.prompt("Enter the link URL");
+          if (!href) return;
+          href = href.trim();
+          if (!/^(https?:|mailto:|tel:|\/|#)/i.test(href)) href = `https://${href}`;
+          const selectedText = window.getSelection()?.toString() || "";
+          if (selectedText) {
+            document.execCommand("createLink", false, href);
+          } else {
+            document.execCommand("insertHTML", false, `<a href="${escapeAttribute(href)}">${escapeAttribute(href)}</a>`);
+          }
+          editor.innerHTML = cleanRichHtml(editor.innerHTML);
+          onInput(editor.innerHTML);
+          return;
+        }
         document.execCommand(command, false, argument);
         onInput(cleanRichHtml(editor.innerHTML));
       });
