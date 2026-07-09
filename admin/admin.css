@@ -329,6 +329,25 @@ button {
   background: #07161c;
 }
 
+.email-test-send {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.75fr) auto;
+  gap: 0.8rem;
+  align-items: end;
+  padding: 1rem;
+  border: 1px solid rgba(66, 228, 255, 0.24);
+  border-radius: var(--radius);
+  background: rgba(66, 228, 255, 0.045);
+}
+
+.email-test-send h3 {
+  margin-bottom: 0.3rem;
+}
+
+.email-test-send .admin-note {
+  margin: 0;
+}
+
 .email-campaign-scheduler {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 0.7fr) auto;
@@ -998,6 +1017,7 @@ button {
   .order-detail-card,
   .shipping-method-grid,
   .crm-step-row,
+  .email-test-send,
   .email-campaign-scheduler,
   .campaign-row {
     grid-template-columns: 1fr;

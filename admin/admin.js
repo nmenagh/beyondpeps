@@ -1697,6 +1697,56 @@ function renderEmailTemplates() {
   actions.append(save, preview);
   card.append(actions);
 
+  const testSend = document.createElement("section");
+  testSend.className = "email-test-send field-wide";
+  testSend.innerHTML = `
+    <div>
+      <p class="eyebrow">Test delivery</p>
+      <h3>Send this template</h3>
+      <p class="admin-note">The test uses sample customer and order values and does not add the recipient to the CRM.</p>
+    </div>
+    <label>Recipient email<input id="templateTestRecipient" type="email" value="${escapeAttribute(activeAdminEmail)}" placeholder="recipient@example.com"></label>
+    <button class="button primary" id="sendTemplateTest" type="button">Send test email</button>
+    <p class="admin-note field-wide" id="templateTestStatus"></p>
+  `;
+  testSend.querySelector("#sendTemplateTest").addEventListener("click", async () => {
+    const button = testSend.querySelector("#sendTemplateTest");
+    const recipient = testSend.querySelector("#templateTestRecipient").value.trim();
+    const status = testSend.querySelector("#templateTestStatus");
+    if (!recipient) {
+      status.textContent = "Enter a recipient email address.";
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Sending...";
+    status.textContent = "";
+    try {
+      const saved = await window.BeyondPepsSupabase.saveEmailTemplate(template);
+      Object.assign(template, saved || {});
+      const token = window.BeyondPepsSupabase.session()?.access_token;
+      const response = await fetch("../api/test-template", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token || ""}`
+        },
+        body: JSON.stringify({ templateId: template.id, to: recipient })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Test email failed.");
+      if (!data.sent) throw new Error(data.reason || "Email service is not configured.");
+      status.textContent = `Test email sent to ${recipient}.`;
+      toast("Test email sent.");
+    } catch (error) {
+      status.textContent = error.message;
+      toast("Test email failed.");
+    } finally {
+      button.disabled = false;
+      button.textContent = "Send test email";
+    }
+  });
+  card.append(testSend);
+
   if (template.category === "blast") {
     const scheduler = document.createElement("section");
     scheduler.className = "email-campaign-scheduler field-wide";

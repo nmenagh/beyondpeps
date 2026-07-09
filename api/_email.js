@@ -22,7 +22,7 @@ async function supabaseRequest(path, options = {}) {
     method: options.method || "GET",
     headers: {
       apikey: key,
-      Authorization: `Bearer ${key}`,
+      Authorization: `Bearer ${options.authToken || key}`,
       "Content-Type": "application/json",
       Prefer: options.prefer || "return=representation"
     },
@@ -64,9 +64,10 @@ function replaceTokens(source = "", tokens = {}, htmlTokenNames = []) {
   });
 }
 
-async function loadTemplate(templateId) {
+async function loadTemplate(templateId, includeDisabled = false) {
   try {
-    const rows = await supabaseRequest(`/rest/v1/email_templates?id=eq.${encodeURIComponent(templateId)}&enabled=eq.true&select=*&limit=1`);
+    const enabledFilter = includeDisabled ? "" : "&enabled=eq.true";
+    const rows = await supabaseRequest(`/rest/v1/email_templates?id=eq.${encodeURIComponent(templateId)}${enabledFilter}&select=*&limit=1`);
     return rows?.[0] || null;
   } catch (error) {
     console.warn(`Email template ${templateId} unavailable.`, error.message);
@@ -130,11 +131,13 @@ async function renderStoredEmail({
   htmlTokenNames = [],
   recipientEmail = "",
   recipientName = "",
-  unsubscribeToken = ""
+  unsubscribeToken = "",
+  includeDisabled = false,
+  lookupContact = true
 }) {
-  const template = await loadTemplate(templateId);
+  const template = await loadTemplate(templateId, includeDisabled);
   const selected = template || fallback;
-  const contact = unsubscribeToken ? null : await contactForEmail(recipientEmail, recipientName);
+  const contact = unsubscribeToken || !lookupContact ? null : await contactForEmail(recipientEmail, recipientName);
   const token = unsubscribeToken || contact?.unsubscribe_token || "";
   const unsubscribeUrl = token ? `${siteUrl()}/unsubscribe.html?token=${encodeURIComponent(token)}` : "";
   const mergedTokens = {
