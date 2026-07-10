@@ -748,6 +748,10 @@ h3 {
   font-weight: 740;
 }
 
+.reference-guide-tools nav a[hidden] {
+  display: none;
+}
+
 .reference-guide-tools nav a:hover,
 .reference-guide-tools nav a.is-active {
   border-color: rgba(101, 255, 200, 0.36);
