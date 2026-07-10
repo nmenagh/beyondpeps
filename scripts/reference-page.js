@@ -123,6 +123,11 @@
     return /^bm_[a-z0-9_]+$/i.test(name) && title.length >= 2 && title.length <= 90;
   }
 
+  function isIndexBacklink(node) {
+    if (node.nodeType !== Node.ELEMENT_NODE) return false;
+    return /back\s+to\s+index/i.test(node.textContent.trim());
+  }
+
   function ensureNodeId(node, usedIds) {
     const existing = normalizeAnchor(node.id || node.getAttribute("name"));
     let id = existing || slugify(node.textContent || "section");
@@ -166,6 +171,7 @@
       }
 
       if (activeSection) {
+        if (isIndexBacklink(node)) return;
         activeSection.nodes.push(node);
       } else {
         introNodes.push(node);
@@ -203,6 +209,7 @@
       }
 
       if (activeSection) {
+        if (isIndexBacklink(node)) return;
         activeSection.nodes.push(node);
       } else {
         introNodes.push(node);
@@ -225,6 +232,7 @@
     const toc = document.querySelector("#referenceToc");
     const count = document.querySelector("#referenceGuideCount");
     const search = document.querySelector("#referenceGuideSearch");
+    const clearSearch = document.querySelector("#referenceGuideClear");
     const body = document.querySelector("#referenceBody");
     const layout = document.querySelector(".reference-detail-layout");
     if (!guide || !tools || !toc || !body) {
@@ -236,9 +244,7 @@
 
     tools.hidden = false;
     layout?.classList.add("is-guide-mode");
-    const introHtml = renderNodes(guide.introNodes);
     body.innerHTML = `
-      ${introHtml ? `<div class="reference-guide-intro">${introHtml}</div>` : ""}
       <div class="reference-guide-sections">
         ${guide.sections.map((section, index) => `
           <section class="reference-guide-section${index === 0 ? " is-active" : ""}" id="section-${escapeHtml(section.id)}" data-title="${escapeHtml(section.title.toLowerCase())}">
@@ -252,21 +258,25 @@
       <a class="${index === 0 ? "is-active" : ""}" href="#${encodeURIComponent(section.id)}" data-section="section-${escapeHtml(section.id)}">${escapeHtml(section.title)}</a>
     `).join("");
 
-    const updateCount = () => {
+    const updateCount = (term = "") => {
       const visible = [...toc.querySelectorAll("a")].filter((link) => !link.hidden).length;
-      count.textContent = `${visible} of ${guide.sections.length} sections shown`;
+      count.textContent = term ? `${visible} matches found` : `${visible} peptides available`;
     };
 
-    search?.addEventListener("input", () => {
-      const term = search.value.trim().toLowerCase();
+    const applySearch = () => {
+      const term = search?.value.trim().toLowerCase() || "";
       [...toc.querySelectorAll("a")].forEach((link) => {
         link.hidden = Boolean(term) && !link.textContent.toLowerCase().includes(term);
       });
-      const firstVisible = toc.querySelector("a:not([hidden])");
-      if (firstVisible && !toc.querySelector("a.is-active:not([hidden])")) {
-        setActiveSection(firstVisible.dataset.section);
-      }
-      updateCount();
+      if (clearSearch) clearSearch.hidden = !term;
+      updateCount(term);
+    };
+
+    search?.addEventListener("input", applySearch);
+    clearSearch?.addEventListener("click", () => {
+      search.value = "";
+      applySearch();
+      search.focus();
     });
     updateCount();
 

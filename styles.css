@@ -674,10 +674,14 @@ h3 {
   text-transform: uppercase;
 }
 
+.reference-search-control {
+  position: relative;
+}
+
 .reference-guide-tools input {
   width: 100%;
   min-height: 2.8rem;
-  padding: 0 0.85rem;
+  padding: 0 2.7rem 0 0.85rem;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(1, 7, 11, 0.55);
@@ -688,6 +692,36 @@ h3 {
 .reference-guide-tools input:focus {
   border-color: rgba(101, 255, 200, 0.72);
   box-shadow: 0 0 0 3px rgba(101, 255, 200, 0.1);
+}
+
+.reference-search-control button {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  width: 2.05rem;
+  height: 2.05rem;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(188, 244, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 860;
+  line-height: 1;
+  text-transform: uppercase;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.reference-search-control button:hover {
+  border-color: rgba(101, 255, 200, 0.6);
+  background: rgba(101, 255, 200, 0.12);
+}
+
+.reference-search-control button[hidden] {
+  display: none;
 }
 
 .reference-guide-tools p {
