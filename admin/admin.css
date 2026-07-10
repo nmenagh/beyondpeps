@@ -20,6 +20,20 @@
   backdrop-filter: blur(22px);
 }
 
+.admin-brand {
+  gap: 0.7rem;
+}
+
+.admin-brand-text {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.2rem;
+  font-size: 2.2rem;
+  font-weight: 820;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
 .admin-actions,
 .inline-actions {
   display: flex;
