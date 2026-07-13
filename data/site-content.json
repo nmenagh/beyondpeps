@@ -10,6 +10,12 @@
     "blogHeroImageUrl": "/assets/hero-liquid-lab.png",
     "primaryCta": "Shop research supplies",
     "secondaryCta": "Explore references",
+    "homeValueOneLabel": "Measured",
+    "homeValueOneTitle": "Tools that respect units, labels, and repeatable workflows.",
+    "homeValueTwoLabel": "Readable",
+    "homeValueTwoTitle": "Reference material written for careful users, not hype cycles.",
+    "homeValueThreeLabel": "Expandable",
+    "homeValueThreeTitle": "Built to grow into payments, accounts, and managed inventory.",
     "disclaimer": "Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.",
     "shippingMethods": {
       "enabledServicelevels": [

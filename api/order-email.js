@@ -36,6 +36,47 @@ function zelleDetails(settings = {}, order = {}) {
   `;
 }
 
+function paymentMethod(body = {}) {
+  const order = body.order || {};
+  return String(
+    body.paymentMethod ||
+    order.paymentMethod ||
+    order.payment_method ||
+    order.paymentProvider ||
+    order.payment_provider ||
+    order.metadata?.paymentMethod ||
+    ""
+  ).trim().toLowerCase();
+}
+
+function paymentLabel(method = "") {
+  if (method === "zelle") return "Zelle";
+  if (method === "card" || method === "stripe") return "Card";
+  if (method === "paypal") return "PayPal";
+  if (method === "crypto") return "Crypto";
+  return method ? method.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) : "Payment";
+}
+
+function paymentDetails(body = {}) {
+  const order = body.order || {};
+  const method = paymentMethod(body);
+  if (method === "zelle") return zelleDetails(body.paymentSettings, order);
+
+  const status = String(order.paymentStatus || order.payment_status || order.status || "").replace(/[_-]+/g, " ");
+  const label = paymentLabel(method);
+  const paid = ["paid", "processing", "completed"].some((token) => status.toLowerCase().includes(token));
+  const note = paid
+    ? "Payment has been received and your order is moving into processing."
+    : "Payment details are recorded with your order. We will update you if any additional action is needed.";
+
+  return `
+    <h2>Payment summary</h2>
+    <p><strong>Method:</strong> ${escapeHtml(label)}</p>
+    ${status ? `<p><strong>Status:</strong> ${escapeHtml(status)}</p>` : ""}
+    <p>${escapeHtml(note)}</p>
+  `;
+}
+
 function itemsTable(items = []) {
   return `
     <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">
@@ -88,7 +129,8 @@ function emailTokens(body = {}) {
     subtotal: money(order.subtotalCents),
     shipping: money(order.shippingCents),
     total: money(order.totalCents),
-    payment_details: zelleDetails(body.paymentSettings, order),
+    payment_method: paymentLabel(paymentMethod(body)),
+    payment_details: paymentDetails(body),
     shipping_provider: order.shippingProvider || "Shipping carrier",
     shipping_service: order.shippingService || "Selected service",
     tracking_number: order.trackingNumber || "Tracking will update soon",

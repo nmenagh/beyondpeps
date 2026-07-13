@@ -55,6 +55,20 @@
     }
   }
 
+  async function readApiResponse(response, fallbackMessage) {
+    const text = await response.text();
+    let data = {};
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(fallbackMessage);
+      }
+    }
+    if (!response.ok) throw new Error(data.error || fallbackMessage);
+    return data;
+  }
+
   function emptyShippingAddress() {
     return {
       name: "",
@@ -311,8 +325,7 @@
           shippingMethods: shippingMethodSettings()
         })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to calculate shipping.");
+      const data = await readApiResponse(response, "Shipping rates are temporarily unavailable. Please try again in a moment.");
       if (calculationSequence !== shippingCalculationSequence) return;
 
       const rates = data.rates || [];
@@ -518,14 +531,14 @@
         body: JSON.stringify({
           type: "order_confirmation",
           customer: { name: address.name, email: address.email, phone: address.phone },
+          paymentMethod: readPaymentMethod(),
           order,
           items,
           shippingRate,
           paymentSettings
         })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Confirmation email failed.");
+      const data = await readApiResponse(response, "Confirmation email failed.");
       return data;
     } catch (error) {
       console.warn("Confirmation email did not send.", error);

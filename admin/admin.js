@@ -38,6 +38,7 @@ let activeCrmContactId = null;
 let activeCrmSequenceId = null;
 let activeAdminEmail = "";
 const ORDER_STATUSES = ["pending", "paid", "fulfilled", "cancelled", "refunded"];
+const PRODUCT_STATUS_OPTIONS = ["Draft", "Active", "Coming Soon", "Archived"];
 
 const siteSchema = [
   ["name", "Site name"],
@@ -52,7 +53,7 @@ const productSchema = [
   ["price", "Price", "number"],
   ["stockLevel", "Stock level", "number"],
   ["productWeight", "Product weight (oz)", "number"],
-  ["status", "Status"],
+  ["status", "Status", "product_status"],
   ["featured", "Featured product", "checkbox"],
   ["mustShipSeparately", "Must Ship Separately", "checkbox"],
   ["packageLength", "Package length (in)", "number", false, "uploads", (item) => item.mustShipSeparately],
@@ -76,7 +77,13 @@ const pageCopyConfig = [
       ["site.heroBody", "Hero body", "textarea"],
       ["site.primaryCta", "Primary CTA"],
       ["site.secondaryCta", "Secondary CTA"],
-      ["site.announcement", "Announcement", "textarea"],
+      ["site.announcement", "Intro section headline", "textarea"],
+      ["site.homeValueOneLabel", "Intro card 1 label"],
+      ["site.homeValueOneTitle", "Intro card 1 text", "textarea"],
+      ["site.homeValueTwoLabel", "Intro card 2 label"],
+      ["site.homeValueTwoTitle", "Intro card 2 text", "textarea"],
+      ["site.homeValueThreeLabel", "Intro card 3 label"],
+      ["site.homeValueThreeTitle", "Intro card 3 text", "textarea"],
       ["site.homeFeaturedEyebrow", "Featured products eyebrow"],
       ["site.homeFeaturedTitle", "Featured products title", "textarea"],
       ["site.homeFeaturedBody", "Featured products body", "textarea"],
@@ -749,6 +756,20 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
     text.textContent = label;
 
     wrap.append(input, text);
+    return wrap;
+  }
+
+  if (type === "product_status") {
+    const select = document.createElement("select");
+    const current = PRODUCT_STATUS_OPTIONS.includes(value) ? value : "Draft";
+    select.innerHTML = PRODUCT_STATUS_OPTIONS
+      .map((status) => `<option value="${escapeAttribute(status)}"${status === current ? " selected" : ""}>${escapeAttribute(status)}</option>`)
+      .join("");
+    select.addEventListener("change", () => {
+      onInput(select.value);
+      updateJsonEditor();
+    });
+    wrap.append(select);
     return wrap;
   }
 
