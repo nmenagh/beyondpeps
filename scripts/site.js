@@ -88,6 +88,10 @@ function applyContentBindings(content) {
   });
 }
 
+function markContentReady() {
+  document.documentElement.classList.add("content-ready");
+}
+
 function money(value) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -365,20 +369,27 @@ function setupAnalyticsTracking() {
 
 setupAnalyticsTracking();
 
-loadContent().then((content) => {
-  window.BeyondPepsContent = content;
-  applyContentBindings(content);
-  renderProducts(content.products);
-  renderFeaturedProducts(content.products);
-  renderReferences(content.references);
-  renderPosts(content.posts);
-  renderPostList(content.posts);
-  applyPageMedia(content);
-  updateAccountPill();
-  setupMobileNav();
-  setupHeroMotion();
-  setupNewsletterSignup();
-});
+loadContent()
+  .then((content) => {
+    window.BeyondPepsContent = content;
+    applyContentBindings(content);
+    renderProducts(content.products);
+    renderFeaturedProducts(content.products);
+    renderReferences(content.references);
+    renderPosts(content.posts);
+    renderPostList(content.posts);
+    applyPageMedia(content);
+    updateAccountPill();
+  })
+  .catch((error) => {
+    console.warn("Site content could not be applied.", error);
+  })
+  .finally(() => {
+    markContentReady();
+    setupMobileNav();
+    setupHeroMotion();
+    setupNewsletterSignup();
+  });
 
 window.BeyondPepsSite = {
   loadContent,

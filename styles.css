@@ -36,6 +36,15 @@ body {
   line-height: 1.5;
 }
 
+[data-content] {
+  transition: color 160ms ease, opacity 160ms ease;
+}
+
+html:not(.content-ready) [data-content] {
+  color: transparent !important;
+  opacity: 0;
+}
+
 body::before {
   position: fixed;
   inset: 0;
