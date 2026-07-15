@@ -9,6 +9,21 @@
     <meta name="description" content="Beyond Peps blog post.">
     <style>html:not(.content-ready) [data-content]{opacity:0;color:transparent!important}</style>
     <link rel="stylesheet" href="styles.css?v=content-ready-1">
+    <style>
+      .post-detail-layout {
+        display: grid;
+      }
+
+      .post-detail-card {
+        width: 100%;
+        padding: clamp(1.1rem, 4vw, 2rem);
+        border-radius: var(--radius);
+      }
+
+      .post-detail-card .rich-content {
+        max-width: 880px;
+      }
+    </style>
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -40,8 +55,8 @@
         <p id="postSummary">Loading post...</p>
       </section>
 
-      <section class="section page-section reference-detail-layout">
-        <article class="glass-panel reference-detail-card">
+      <section class="section page-section post-detail-layout">
+        <article class="glass-panel post-detail-card">
           <div class="rich-content" id="postBody"></div>
           <div class="inline-actions">
             <a class="button ghost" href="blog.html">Back to blog</a>
