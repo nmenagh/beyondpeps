@@ -226,7 +226,13 @@
     return wrapper.innerHTML.trim();
   }
 
-  function renderStructuredGuide(markup) {
+  function shouldUseStructuredGuide(reference = {}) {
+    const keys = [reference.id, reference.slug, reference.title, slugify(reference.title || "")]
+      .map((value) => String(value || "").toLowerCase());
+    return keys.includes("peptide-reference-guide");
+  }
+
+  function renderStructuredGuide(markup, reference = {}) {
     const guide = buildGuideSections(markup);
     const tools = document.querySelector("#referenceGuideTools");
     const toc = document.querySelector("#referenceToc");
@@ -235,8 +241,12 @@
     const clearSearch = document.querySelector("#referenceGuideClear");
     const body = document.querySelector("#referenceBody");
     const layout = document.querySelector(".reference-detail-layout");
-    if (!guide || !tools || !toc || !body) {
+    if (!shouldUseStructuredGuide(reference) || !guide || !tools || !toc || !body) {
       if (tools) tools.hidden = true;
+      if (toc) toc.innerHTML = "";
+      if (count) count.textContent = "Select a section to view.";
+      if (search) search.value = "";
+      if (clearSearch) clearSearch.hidden = true;
       layout?.classList.remove("is-guide-mode");
       body.innerHTML = markup;
       return false;
@@ -326,7 +336,7 @@
     document.querySelector("#referenceTitle").textContent = reference.title || "Reference";
     document.querySelector("#referenceSummary").textContent = reference.summary || "";
     const markup = bodyMarkup(reference.body || reference.summary);
-    renderStructuredGuide(markup);
+    renderStructuredGuide(markup, reference);
     setupInternalAnchors();
   }).catch(() => {
     document.querySelector("#referenceTitle").textContent = "Reference unavailable";
