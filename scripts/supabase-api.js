@@ -149,7 +149,7 @@
       date: (post.published_at || post.created_at || "").slice(0, 10),
       summary: post.summary || "",
       body: post.body || post.summary || "",
-      imageUrl: post.image_url || "",
+      imageUrl: post.image_url || post.hero_image_url || "",
       heroImageUrl: post.hero_image_url || post.image_url || "",
       status: dbStatusToUi(post.status)
     };
@@ -176,7 +176,7 @@
       summary: post.summary || "",
       body: post.body || post.summary || "",
       image_url: post.imageUrl || null,
-      hero_image_url: post.heroImageUrl || post.imageUrl || null,
+      hero_image_url: post.imageUrl || null,
       status,
       published: status === "published",
       published_at: status === "published" ? `${post.date || new Date().toISOString().slice(0, 10)}T00:00:00.000Z` : null
@@ -247,6 +247,17 @@
     });
   }
 
+  async function deleteMissingPosts(slugs = []) {
+    const filter = slugs.length
+      ? `slug=not.in.(${postgrestQuotedList(slugs)})`
+      : "slug=not.is.null";
+
+    await request(`/rest/v1/blog_posts?${filter}`, {
+      method: "DELETE",
+      prefer: "return=minimal"
+    });
+  }
+
   async function deleteMissingProducts(slugs = []) {
     const filter = slugs.length
       ? `slug=not.in.(${postgrestQuotedList(slugs)})`
@@ -311,6 +322,7 @@
       prefer: "resolution=merge-duplicates,return=representation",
       body: postRows
     });
+    await deleteMissingPosts(postRows.map((post) => post.slug));
 
     return true;
   }

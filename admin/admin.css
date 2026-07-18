@@ -507,7 +507,8 @@ button {
 .order-admin-tile,
 .content-admin-tile {
   display: grid;
-  gap: 0.5rem;
+  align-content: start;
+  gap: 0.65rem;
   min-height: 9.5rem;
   padding: 1rem;
   border: 1px solid var(--line);
@@ -532,6 +533,7 @@ button {
 .content-admin-tile strong {
   color: #ffffff;
   font-size: 1.2rem;
+  line-height: 1.28;
 }
 
 .order-admin-tile small,
@@ -541,16 +543,47 @@ button {
   color: var(--muted);
 }
 
+.content-admin-tile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.content-admin-tile-header small {
+  overflow: hidden;
+  font-size: 0.83rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .order-admin-status,
 .content-admin-status {
   width: fit-content;
+  flex: 0 0 auto;
   padding: 0.25rem 0.55rem;
   border: 1px solid rgba(101, 255, 200, 0.32);
   border-radius: 999px;
   color: var(--mint);
   font-size: 0.76rem;
+  font-weight: 760;
+  line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.content-admin-status.is-draft {
+  border-color: rgba(188, 244, 255, 0.28);
+  color: var(--cyan);
+}
+
+.content-admin-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
 }
 
 .order-detail-card {

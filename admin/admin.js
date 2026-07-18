@@ -212,6 +212,11 @@ async function saveContent() {
   }
 
   if (!validateFeaturedLimit()) return;
+  content.posts.forEach((post) => {
+    const imageUrl = post.imageUrl || post.heroImageUrl || "";
+    post.imageUrl = imageUrl;
+    post.heroImageUrl = imageUrl;
+  });
 
   try {
     if (window.BeyondPepsSupabase?.isConfigured()) {
@@ -1491,11 +1496,15 @@ function renderEditableTiles(collection, rootSelector, schema, activeIndex, setA
     const tile = document.createElement("button");
     tile.className = "content-admin-tile";
     tile.type = "button";
+    const status = item.status || "Draft";
+    const meta = options.meta?.(item) || "";
     tile.innerHTML = `
-      <span class="content-admin-status">${escapeAttribute(item.status || "Draft")}</span>
+      <span class="content-admin-tile-header">
+        <span class="content-admin-status is-${escapeAttribute(slugify(status))}">${escapeAttribute(status)}</span>
+        <small>${escapeAttribute(meta)}</small>
+      </span>
       <strong>${escapeAttribute(item.title || item.name || "Untitled")}</strong>
-      <small>${escapeAttribute(options.meta?.(item) || "")}</small>
-      <span>${escapeAttribute(item.summary || item.body?.replace(/<[^>]*>/g, "").slice(0, 120) || "No summary yet.")}</span>
+      <span class="content-admin-summary">${escapeAttribute(item.summary || item.body?.replace(/<[^>]*>/g, "").slice(0, 120) || "No summary yet.")}</span>
     `;
     tile.addEventListener("click", () => {
       setActiveIndex(index);
@@ -1529,8 +1538,7 @@ function renderCollections() {
     ["title", "Title"],
     ["date", "Date"],
     ["status", "Status"],
-    ["imageUrl", "Blog card image", "image", true, "blog"],
-    ["heroImageUrl", "Blog post hero image", "image", true, "blog"],
+    ["imageUrl", "Blog image", "image", true, "blog"],
     ["summary", "Summary", "textarea", true],
     ["body", "Blog post body", "richtext", true]
   ], activePostIndex, (value) => {
