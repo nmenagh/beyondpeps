@@ -39,6 +39,7 @@ let activeCrmSequenceId = null;
 let activeAdminEmail = "";
 const ORDER_STATUSES = ["pending", "paid", "fulfilled", "cancelled", "refunded"];
 const PRODUCT_STATUS_OPTIONS = ["Draft", "Active", "Coming Soon", "Archived"];
+const POST_STATUS_OPTIONS = ["Draft", "Published", "Archived"];
 
 const siteSchema = [
   ["name", "Site name"],
@@ -768,6 +769,20 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
     const select = document.createElement("select");
     const current = PRODUCT_STATUS_OPTIONS.includes(value) ? value : "Draft";
     select.innerHTML = PRODUCT_STATUS_OPTIONS
+      .map((status) => `<option value="${escapeAttribute(status)}"${status === current ? " selected" : ""}>${escapeAttribute(status)}</option>`)
+      .join("");
+    select.addEventListener("change", () => {
+      onInput(select.value);
+      updateJsonEditor();
+    });
+    wrap.append(select);
+    return wrap;
+  }
+
+  if (type === "post_status") {
+    const select = document.createElement("select");
+    const current = POST_STATUS_OPTIONS.includes(value) ? value : "Draft";
+    select.innerHTML = POST_STATUS_OPTIONS
       .map((status) => `<option value="${escapeAttribute(status)}"${status === current ? " selected" : ""}>${escapeAttribute(status)}</option>`)
       .join("");
     select.addEventListener("change", () => {
@@ -1537,7 +1552,7 @@ function renderCollections() {
     ["slug", "Slug"],
     ["title", "Title"],
     ["date", "Date"],
-    ["status", "Status"],
+    ["status", "Status", "post_status"],
     ["imageUrl", "Blog image", "image", true, "blog"],
     ["summary", "Summary", "textarea", true],
     ["body", "Blog post body", "richtext", true]
@@ -2369,18 +2384,20 @@ function renderBackendStatus() {
 }
 
 function renderSummary() {
-  const root = document.querySelector("#adminSummary");
-  if (!root) return;
   const featuredCount = featuredProductCount();
-  root.innerHTML = `
-    <article><strong>${content.products.length}</strong><span>Products</span></article>
-    <article><strong>${featuredCount}/${MAX_FEATURED_PRODUCTS}</strong><span>Featured</span></article>
-    <article><strong>${orders.length}</strong><span>Orders</span></article>
-    <article><strong>${mediaAssets.length}</strong><span>Media</span></article>
-    <article><strong>${crmContacts.length}</strong><span>CRM contacts</span></article>
-    <article><strong>${content.references.length}</strong><span>References</span></article>
-    <article><strong>${content.posts.length}</strong><span>Blog posts</span></article>
-  `;
+  const labels = {
+    postsPanel: `Blog (${content.posts.length})`,
+    crmPanel: `CRM (${crmContacts.length})`,
+    mediaPanel: `Media (${mediaAssets.length})`,
+    ordersPanel: `Orders (${orders.length})`,
+    productsPanel: `Products (${content.products.length}, ${featuredCount}/${MAX_FEATURED_PRODUCTS} featured)`,
+    referencesPanel: `References (${content.references.length})`
+  };
+
+  Object.entries(labels).forEach(([panelId, label]) => {
+    const tab = document.querySelector(`.tab[data-panel="${panelId}"]`);
+    if (tab) tab.innerHTML = label.replace(/\((.*)\)$/, '<span class="tab-count">($1)</span>');
+  });
 }
 
 function renderMediaLibrary() {
