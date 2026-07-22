@@ -1217,6 +1217,9 @@ function renderOrderDetail(order) {
   const labelUrl = order.label_url || "";
   const trackingUrl = order.tracking_url || "";
   const labels = orderLabels(order);
+  const shipments = (Array.isArray(order.order_shipments) ? order.order_shipments : [])
+    .slice()
+    .sort((left, right) => Number(left.package_number || 1) - Number(right.package_number || 1));
 
   card.innerHTML = `
     <div class="field-wide order-detail-header">
@@ -1262,6 +1265,24 @@ function renderOrderDetail(order) {
       `).join("")}
       ${!labels.length && labelUrl ? `<p><a href="${escapeAttribute(labelUrl)}" target="_blank" rel="noopener">Open shipping label</a></p>` : ""}
       ${!labels.length && trackingUrl ? `<p><a href="${escapeAttribute(trackingUrl)}" target="_blank" rel="noopener">Track package ${escapeAttribute(order.tracking_number || "")}</a></p>` : ""}
+      ${shipments.length ? `
+        <div class="admin-shipment-list">
+          ${shipments.map((shipment, index) => `
+            <article class="admin-shipment-card">
+              <div>
+                <span>Package ${escapeAttribute(shipment.package_number || index + 1)}</span>
+                <strong>${escapeAttribute(adminTrackingStatus(shipment.status))}</strong>
+              </div>
+              <p><span>Tracking</span><strong>${escapeAttribute(shipment.tracking_number || "Pending")}</strong></p>
+              <p><span>Carrier</span><strong>${escapeAttribute(shipment.carrier || "Unknown")}</strong></p>
+              ${shipment.delivered_at ? `<p><span>Delivered</span><strong>${escapeAttribute(formatDateTime(shipment.delivered_at))}</strong></p>` : ""}
+              ${!shipment.delivered_at && shipment.eta ? `<p><span>Estimated delivery</span><strong>${escapeAttribute(formatDateTime(shipment.eta))}</strong></p>` : ""}
+              ${shipment.status_details || shipment.substatus_text ? `<p class="admin-shipment-detail">${escapeAttribute(shipment.substatus_text || shipment.status_details)}</p>` : ""}
+              ${shipment.last_shippo_update_at ? `<small>Last Shippo update: ${escapeAttribute(formatDateTime(shipment.last_shippo_update_at))}</small>` : ""}
+            </article>
+          `).join("")}
+        </div>
+      ` : `<p class="admin-note">No stored Shippo tracking status yet.</p>`}
       <button class="button primary" id="createShippoLabel" type="button">${labelUrl ? "Recheck label" : "Create Shippo label"}</button>
       ${(order.tracking_number || labels.some((label) => label.trackingNumber)) ? `<button class="button ghost" id="refreshShippoTracking" type="button">Refresh tracking</button>` : ""}
       <p class="admin-note" id="labelStatus"></p>
@@ -1291,6 +1312,30 @@ function renderOrderDetail(order) {
   card.querySelector("#refreshShippoTracking")?.addEventListener("click", () => refreshShippoTracking(order.id));
 
   return card;
+}
+
+function adminTrackingStatus(status = "") {
+  const labels = {
+    PRE_TRANSIT: "Label created",
+    TRANSIT: "In transit",
+    DELIVERED: "Delivered",
+    RETURNED: "Returning to sender",
+    FAILURE: "Delivery issue",
+    UNKNOWN: "Tracking pending"
+  };
+  const normalized = String(status || "UNKNOWN").toUpperCase();
+  return labels[normalized] || normalized.replace(/_/g, " ");
+}
+
+function formatDateTime(value) {
+  if (!value || Number.isNaN(Date.parse(value))) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date(value));
 }
 
 function addressBlock(address = {}) {
