@@ -243,6 +243,18 @@
   }
 
   function orderTracking(order = {}) {
+    const shipments = Array.isArray(order.order_shipments) ? order.order_shipments : [];
+    if (shipments.length) {
+      return shipments
+        .slice()
+        .sort((left, right) => Number(left.package_number || 1) - Number(right.package_number || 1))
+        .map((shipment) => ({
+          ...shipment,
+          trackingNumber: shipment.tracking_number || "",
+          trackingUrl: shipment.tracking_url || "",
+          trackingCarrier: shipment.carrier || ""
+        }));
+    }
     const labels = Array.isArray(order.shipping_method?.labels) ? order.shipping_method.labels : [];
     if (labels.length) return labels;
     if (!order.tracking_number && !order.tracking_url) return [];
@@ -251,6 +263,79 @@
       trackingUrl: order.tracking_url || "",
       trackingCarrier: order.tracking_carrier || order.shipping_provider || ""
     }];
+  }
+
+  function trackingStatusLabel(status = "") {
+    const labels = {
+      PRE_TRANSIT: "Label created",
+      TRANSIT: "In transit",
+      DELIVERED: "Delivered",
+      RETURNED: "Returning to sender",
+      FAILURE: "Delivery issue",
+      UNKNOWN: "Tracking pending"
+    };
+    return labels[String(status).toUpperCase()] || String(status || "Tracking pending").replace(/_/g, " ");
+  }
+
+  function trackingDate(value, includeTime = false) {
+    if (!value || Number.isNaN(Date.parse(value))) return "";
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      ...(includeTime ? { hour: "numeric", minute: "2-digit" } : {})
+    }).format(new Date(value));
+  }
+
+  function trackingLocation(location = {}) {
+    return [location.city, location.state, location.country].filter(Boolean).join(", ");
+  }
+
+  function trackingHistory(shipment = {}) {
+    const history = Array.isArray(shipment.tracking_history) ? shipment.tracking_history : [];
+    return history.slice(-4).reverse();
+  }
+
+  function renderTrackingShipment(shipment, index) {
+    const status = String(shipment.status || "UNKNOWN").toUpperCase();
+    const delivered = status === "DELIVERED";
+    const eta = !delivered && trackingDate(shipment.eta);
+    const statusDate = trackingDate(shipment.delivered_at || shipment.status_date, true);
+    const location = trackingLocation(shipment.location);
+    const history = trackingHistory(shipment);
+    const detail = shipment.substatus_text || shipment.status_details || "";
+
+    return `
+      <article class="shipment-card shipment-${escapeHtml(status.toLowerCase())}">
+        <div class="shipment-heading">
+          <div>
+            <span class="shipment-package">Package ${escapeHtml(shipment.package_number || index + 1)}</span>
+            <strong>${escapeHtml(shipment.trackingCarrier || "Carrier")}</strong>
+          </div>
+          <span class="shipment-status">${escapeHtml(trackingStatusLabel(status))}</span>
+        </div>
+        ${delivered && statusDate ? `<p class="shipment-prominent">Delivered ${escapeHtml(statusDate)}</p>` : ""}
+        ${eta ? `<p class="shipment-prominent">Estimated delivery ${escapeHtml(eta)}</p>` : ""}
+        ${detail ? `<p class="shipment-detail">${escapeHtml(detail)}</p>` : ""}
+        ${location ? `<p class="shipment-location">Latest location: ${escapeHtml(location)}</p>` : ""}
+        ${shipment.action_required ? `<p class="shipment-alert">Action may be required. Please use the carrier link for instructions.</p>` : ""}
+        <p class="shipment-number">
+          <span>${escapeHtml(shipment.trackingNumber || "Tracking pending")}</span>
+          ${shipment.trackingUrl ? `<a href="${escapeHtml(shipment.trackingUrl)}" target="_blank" rel="noopener">Track with carrier</a>` : ""}
+        </p>
+        ${history.length ? `
+          <ol class="tracking-timeline">
+            ${history.map((event) => `
+              <li>
+                <span>${escapeHtml(trackingDate(event.status_date, true))}</span>
+                <strong>${escapeHtml(trackingStatusLabel(event.status))}</strong>
+                <small>${escapeHtml(event.status_details || trackingLocation(event.location) || "Carrier update")}</small>
+              </li>
+            `).join("")}
+          </ol>
+        ` : ""}
+      </article>
+    `;
   }
 
   function renderOrderDetail(order) {
@@ -293,13 +378,9 @@
         </section>
         <section>
           <h4>Tracking</h4>
-          ${tracking.map((shipment, index) => `
-            <p class="order-tracking-line">
-              <span>${escapeHtml(shipment.trackingCarrier || `Package ${index + 1}`)}</span>
-              <strong>${escapeHtml(shipment.trackingNumber || "Tracking pending")}</strong>
-              ${shipment.trackingUrl ? `<a href="${escapeHtml(shipment.trackingUrl)}" target="_blank" rel="noopener">Track package</a>` : ""}
-            </p>
-          `).join("") || "<p>Tracking will appear here after the order ships.</p>"}
+          <div class="shipment-list">
+            ${tracking.map(renderTrackingShipment).join("") || "<p>Tracking will appear here after the order ships.</p>"}
+          </div>
         </section>
         <section>
           <h4>Totals</h4>

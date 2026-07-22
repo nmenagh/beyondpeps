@@ -87,7 +87,7 @@ function trackingUrl(transaction = {}) {
   return transaction.tracking_url_provider || transaction.tracking_url || transaction.object_tracking_url || "";
 }
 
-async function createTransaction(token, rateId) {
+async function createTransaction(token, rateId, orderId) {
   const shippoResponse = await fetch(`${SHIPPO_API_BASE}/transactions/`, {
     method: "POST",
     headers: {
@@ -97,7 +97,8 @@ async function createTransaction(token, rateId) {
     body: JSON.stringify({
       rate: rateId,
       label_file_type: "PDF",
-      async: false
+      async: false,
+      metadata: `Beyond Peps order ${orderId}`
     })
   });
 
@@ -138,7 +139,7 @@ module.exports = async function handler(request, response) {
 
     const transactions = [];
     for (const rateId of rateIds) {
-      transactions.push(await createTransaction(token, rateId));
+      transactions.push(await createTransaction(token, rateId, orderId));
     }
 
     const transaction = transactions[0] || {};
@@ -171,6 +172,28 @@ module.exports = async function handler(request, response) {
         shipped_at: new Date().toISOString()
       }
     });
+
+    for (const label of labels) {
+      if (!label.trackingNumber) continue;
+      await supabaseRequest("/rest/v1/order_shipments?on_conflict=carrier,tracking_number", {
+        method: "POST",
+        token: adminToken,
+        prefer: "resolution=merge-duplicates,return=representation",
+        body: [{
+          order_id: orderId,
+          package_number: label.packageNumber,
+          shippo_transaction_id: label.transactionId || null,
+          carrier: String(label.trackingCarrier || transaction.tracking_carrier || order.tracking_carrier || "").toLowerCase() || null,
+          service_level: order.shipping_service || order.shipping_method?.servicelevel || null,
+          tracking_number: label.trackingNumber,
+          tracking_url: label.trackingUrl || null,
+          status: "PRE_TRANSIT",
+          status_details: "Shipping label created.",
+          status_date: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }]
+      });
+    }
 
     json(response, 200, {
       order: updated?.[0] || order,

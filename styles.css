@@ -1564,6 +1564,116 @@ select:disabled {
   font-weight: 800;
 }
 
+.shipment-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.shipment-card {
+  padding: 0.85rem;
+  border: 1px solid rgba(188, 244, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(2, 13, 18, 0.34);
+}
+
+.shipment-heading,
+.shipment-number {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.45rem 1rem;
+  align-items: center;
+}
+
+.shipment-heading > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.shipment-package {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.shipment-status {
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(81, 211, 184, 0.14);
+  color: var(--mint);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.shipment-failure .shipment-status,
+.shipment-returned .shipment-status,
+.shipment-alert {
+  color: #ffbf9d;
+  background: rgba(255, 130, 91, 0.12);
+}
+
+.shipment-prominent {
+  margin: 0.8rem 0 0.25rem;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.shipment-detail,
+.shipment-location,
+.shipment-alert {
+  margin: 0.35rem 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.shipment-alert {
+  padding: 0.55rem;
+  border-radius: 9px;
+  font-weight: 750;
+}
+
+.shipment-number {
+  margin: 0.75rem 0 0;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(188, 244, 255, 0.1);
+  font-size: 0.85rem;
+}
+
+.shipment-number a {
+  color: var(--mint);
+  font-weight: 800;
+}
+
+.tracking-timeline {
+  display: grid;
+  gap: 0;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tracking-timeline li {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) 1fr;
+  gap: 0.15rem 0.7rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(188, 244, 255, 0.09);
+}
+
+.tracking-timeline span,
+.tracking-timeline small {
+  color: var(--muted);
+}
+
+.tracking-timeline small {
+  grid-column: 2;
+  line-height: 1.4;
+}
+
 .account-card-header {
   display: flex;
   justify-content: space-between;

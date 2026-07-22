@@ -606,12 +606,12 @@
   async function loadOrders() {
     const user = await currentUser();
     if (!user?.id) return [];
-    return request(`/rest/v1/orders?user_id=eq.${encodeURIComponent(user.id)}&select=*,order_items(*)&order=created_at.desc`);
+    return request(`/rest/v1/orders?user_id=eq.${encodeURIComponent(user.id)}&select=*,order_items(*),order_shipments(*)&order=created_at.desc`);
   }
 
   async function loadAdminOrders() {
     if (!isConfigured()) return [];
-    return request("/rest/v1/orders?select=*,order_items(*)&order=created_at.desc");
+    return request("/rest/v1/orders?select=*,order_items(*),order_shipments(*)&order=created_at.desc");
   }
 
   async function loadEmailTemplates() {
