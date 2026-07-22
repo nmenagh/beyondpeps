@@ -113,6 +113,22 @@ button {
   width: 100%;
 }
 
+.admin-account-link {
+  width: fit-content;
+  color: var(--mint);
+  font-size: 0.86rem;
+  font-weight: 780;
+  text-decoration: underline;
+  text-decoration-color: rgba(103, 242, 201, 0.42);
+  text-underline-offset: 0.22em;
+}
+
+.admin-account-link:hover,
+.admin-account-link:focus-visible {
+  color: var(--text);
+  text-decoration-color: currentColor;
+}
+
 .admin-auth p:last-child {
   margin: 0;
   color: var(--muted);
