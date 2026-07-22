@@ -37,6 +37,8 @@ In the Shippo API Portal, create a production webhook with event type `Track Upd
 
 Labels purchased through the Beyond Peps admin automatically create their shipment record with `PRE_TRANSIT` status. Shippo then sends normalized carrier updates to the webhook. The customer Orders page displays the current status, estimated delivery, delivery time, exception details, latest location, and recent tracking events.
 
+For an older order that still shows `Tracking pending`, open the order in the admin panel and select **Refresh tracking**. The admin-only `/api/refresh-tracking` endpoint retrieves the current status and history directly from Shippo, creates any missing per-package records, and updates what the customer sees. This also supports older multi-package orders whose tracking numbers are stored in the label metadata.
+
 The webhook requires `SUPABASE_SERVICE_ROLE_KEY` so it can update tracking records without a customer or admin browser session. The key must remain server-side in Vercel.
 
 After deploying:

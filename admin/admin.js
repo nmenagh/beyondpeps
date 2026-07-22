@@ -1179,6 +1179,15 @@ function renderOrders() {
     return;
   }
 
+  const trackableOrders = orders.filter((order) => order.tracking_number || orderLabels(order).some((label) => label.trackingNumber));
+  if (trackableOrders.length) {
+    const actions = document.createElement("div");
+    actions.className = "field-wide";
+    actions.innerHTML = `<button class="button ghost" id="refreshAllShippoTracking" type="button">Refresh all tracking (${trackableOrders.length})</button>`;
+    actions.querySelector("button").addEventListener("click", (event) => refreshAllShippoTracking(trackableOrders, event.currentTarget));
+    root.append(actions);
+  }
+
   const grid = document.createElement("div");
   grid.className = "order-admin-grid";
   orders.forEach((order) => {
@@ -1254,6 +1263,7 @@ function renderOrderDetail(order) {
       ${!labels.length && labelUrl ? `<p><a href="${escapeAttribute(labelUrl)}" target="_blank" rel="noopener">Open shipping label</a></p>` : ""}
       ${!labels.length && trackingUrl ? `<p><a href="${escapeAttribute(trackingUrl)}" target="_blank" rel="noopener">Track package ${escapeAttribute(order.tracking_number || "")}</a></p>` : ""}
       <button class="button primary" id="createShippoLabel" type="button">${labelUrl ? "Recheck label" : "Create Shippo label"}</button>
+      ${(order.tracking_number || labels.some((label) => label.trackingNumber)) ? `<button class="button ghost" id="refreshShippoTracking" type="button">Refresh tracking</button>` : ""}
       <p class="admin-note" id="labelStatus"></p>
     </section>
 
@@ -1278,6 +1288,7 @@ function renderOrderDetail(order) {
   card.querySelector("#cancelOrder").addEventListener("click", () => updateOrderStatus(order.id, "cancelled"));
   card.querySelector("#deleteOrder").addEventListener("click", () => deleteOrder(order.id));
   card.querySelector("#createShippoLabel").addEventListener("click", () => createShippoLabel(order.id));
+  card.querySelector("#refreshShippoTracking")?.addEventListener("click", () => refreshShippoTracking(order.id));
 
   return card;
 }
@@ -1365,6 +1376,74 @@ async function createShippoLabel(orderId) {
     button.disabled = false;
     button.textContent = "Create Shippo label";
   }
+}
+
+async function refreshShippoTracking(orderId) {
+  const status = document.querySelector("#labelStatus");
+  const button = document.querySelector("#refreshShippoTracking");
+  button.disabled = true;
+  button.textContent = "Refreshing...";
+  status.textContent = "Checking Shippo for the latest carrier events...";
+
+  try {
+    const token = window.BeyondPepsSupabase.session()?.access_token;
+    const response = await fetch("../api/refresh-tracking", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token || ""}`
+      },
+      body: JSON.stringify({ orderId })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Tracking refresh failed.");
+    await loadAdminOrders();
+    const summary = (data.results || []).map((item) => `${item.trackingNumber}: ${item.ok ? item.status : item.error}`).join(" · ");
+    status.textContent = `Refreshed ${data.refreshed} package${data.refreshed === 1 ? "" : "s"}. ${summary}`;
+    toast("Tracking updated from Shippo.");
+  } catch (error) {
+    status.textContent = error.message;
+    toast("Tracking refresh failed.");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Refresh tracking";
+  }
+}
+
+async function requestTrackingRefresh(orderId) {
+  const token = window.BeyondPepsSupabase.session()?.access_token;
+  const response = await fetch("../api/refresh-tracking", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token || ""}`
+    },
+    body: JSON.stringify({ orderId })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Tracking refresh failed.");
+  return data;
+}
+
+async function refreshAllShippoTracking(trackableOrders, button) {
+  button.disabled = true;
+  let refreshed = 0;
+  let failed = 0;
+
+  for (let index = 0; index < trackableOrders.length; index += 1) {
+    button.textContent = `Refreshing ${index + 1} of ${trackableOrders.length}...`;
+    try {
+      const data = await requestTrackingRefresh(trackableOrders[index].id);
+      refreshed += Number(data.refreshed || 0);
+    } catch (error) {
+      console.warn(`Tracking refresh failed for order ${trackableOrders[index].id}.`, error);
+      failed += 1;
+    }
+  }
+
+  await loadAdminOrders();
+  toast(`Refreshed ${refreshed} package${refreshed === 1 ? "" : "s"}${failed ? `; ${failed} order${failed === 1 ? "" : "s"} could not be refreshed` : ""}.`);
+  renderAll();
 }
 
 async function sendShippedEmail(order = {}, labelData = {}) {
