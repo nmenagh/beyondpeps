@@ -7,7 +7,6 @@
   const profileStatus = document.querySelector("#profileStatus");
   const adminLink = document.querySelector("#accountAdminLink");
   const settingsForm = document.querySelector("#settingsForm");
-  const addressesForm = document.querySelector("#addressesForm");
   const passwordForm = document.querySelector("#passwordForm");
   const orderList = document.querySelector("#orderList");
   const orderDetail = document.querySelector("#orderDetail");
@@ -197,6 +196,7 @@
     document.querySelector("#firstName").value = parts.first;
     document.querySelector("#lastName").value = parts.last;
     document.querySelector("#profileEmail").value = email;
+    document.querySelector("#profilePhone").value = profile?.phone || "";
     fillAddress("ship", profile?.shipping_address || {});
     fillAddress("bill", profile?.billing_address || {});
     if (billingSameAsShipping) {
@@ -402,6 +402,7 @@
     if (!activeProfile) activeProfile = await window.BeyondPepsSupabase.loadProfile();
     activeProfile = await window.BeyondPepsSupabase.saveProfile({
       full_name: activeProfile?.full_name || "",
+      phone: activeProfile?.phone || "",
       shipping_address: activeProfile?.shipping_address || {},
       billing_address: activeProfile?.billing_address || {},
       ...patch
@@ -522,28 +523,21 @@
     try {
       const nextEmail = inputValue("#profileEmail");
       const fullName = [inputValue("#firstName"), inputValue("#lastName")].filter(Boolean).join(" ");
+      const phone = inputValue("#profilePhone");
       const emailChanged = Boolean(nextEmail && nextEmail !== activeUser?.email);
       if (emailChanged) {
         await window.BeyondPepsSupabase.updateAuthUser({ email: nextEmail });
       }
-      await saveProfilePatch({ full_name: fullName });
-      setStatus(profileStatus, emailChanged ? "Profile saved. Confirm the new email if Supabase requires verification." : "Profile saved.");
-    } catch (error) {
-      setStatus(profileStatus, `Profile save failed: ${error.message}`);
-    }
-  });
-
-  addressesForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    try {
       if (billingSameAsShipping?.checked) copyShippingToBilling();
       await saveProfilePatch({
+        full_name: fullName,
+        phone,
         shipping_address: addressFrom("ship"),
         billing_address: addressFrom("bill")
       });
-      setStatus(profileStatus, "Addresses saved.");
+      setStatus(profileStatus, emailChanged ? "Account settings saved. Confirm the new email if Supabase requires verification." : "Account settings saved.");
     } catch (error) {
-      setStatus(profileStatus, `Address save failed: ${error.message}`);
+      setStatus(profileStatus, `Profile save failed: ${error.message}`);
     }
   });
 

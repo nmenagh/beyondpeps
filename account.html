@@ -97,16 +97,12 @@
               <span class="account-menu-icon">01</span>
               Orders
             </button>
-            <button class="account-menu-item" type="button" data-account-panel-trigger="addresses">
-              <span class="account-menu-icon">02</span>
-              Addresses
-            </button>
             <button class="account-menu-item" type="button" data-account-panel-trigger="settings">
-              <span class="account-menu-icon">03</span>
+              <span class="account-menu-icon">02</span>
               Account settings
             </button>
             <button class="account-menu-item" type="button" data-account-panel-trigger="security">
-              <span class="account-menu-icon">04</span>
+              <span class="account-menu-icon">03</span>
               Password
             </button>
             <a class="account-menu-item is-hidden" id="accountAdminLink" href="admin/index.html">
@@ -143,15 +139,29 @@
               <div class="order-customer-detail is-hidden" id="orderDetail"></div>
             </section>
 
-            <section class="glass-panel account-panel" id="addressesPanel" data-account-panel="addresses">
-              <div class="account-panel-heading split">
-                <div>
-                  <p class="eyebrow">Addresses</p>
-                  <h3>Saved addresses</h3>
-                </div>
+            <section class="glass-panel account-panel" id="settingsPanel" data-account-panel="settings">
+              <div class="account-panel-heading">
+                <p class="eyebrow">Profile</p>
+                <h3>Account settings</h3>
               </div>
-              <form id="addressesForm">
-                <div class="address-grid">
+              <form class="account-form-grid" id="settingsForm">
+                <label>
+                  First name
+                  <input id="firstName" type="text" autocomplete="given-name">
+                </label>
+                <label>
+                  Last name
+                  <input id="lastName" type="text" autocomplete="family-name">
+                </label>
+                <label class="field-wide">
+                  Email
+                  <input id="profileEmail" type="email" autocomplete="email">
+                </label>
+                <label class="field-wide">
+                  Phone number
+                  <input id="profilePhone" type="tel" autocomplete="tel">
+                </label>
+                <div class="address-grid field-wide">
                   <fieldset>
                     <legend>Shipping address</legend>
                     <label>Ship to name<input id="shipName" type="text" autocomplete="shipping name"></label>
@@ -176,30 +186,6 @@
                     <label>ZIP code<input id="billPostal" type="text" autocomplete="billing postal-code"></label>
                   </fieldset>
                 </div>
-                <div class="inline-actions">
-                  <button class="button primary" type="submit">Save addresses</button>
-                </div>
-              </form>
-            </section>
-
-            <section class="glass-panel account-panel" id="settingsPanel" data-account-panel="settings">
-              <div class="account-panel-heading">
-                <p class="eyebrow">Profile</p>
-                <h3>Account settings</h3>
-              </div>
-              <form class="account-form-grid" id="settingsForm">
-                <label>
-                  First name
-                  <input id="firstName" type="text" autocomplete="given-name">
-                </label>
-                <label>
-                  Last name
-                  <input id="lastName" type="text" autocomplete="family-name">
-                </label>
-                <label class="field-wide">
-                  Email
-                  <input id="profileEmail" type="email" autocomplete="email">
-                </label>
                 <div class="inline-actions field-wide">
                   <button class="button primary" type="submit">Save changes</button>
                 </div>

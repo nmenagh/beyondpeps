@@ -575,11 +575,12 @@
   async function loadProfile() {
     const user = await currentUser();
     if (!user?.id) return null;
-    const rows = await request(`/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=id,email,full_name,shipping_address,billing_address,role`);
+    const rows = await request(`/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=id,email,full_name,phone,shipping_address,billing_address,role`);
     return rows[0] || {
       id: user.id,
       email: user.email,
       full_name: "",
+      phone: "",
       shipping_address: {},
       billing_address: {}
     };
@@ -592,6 +593,7 @@
       id: user.id,
       email: user.email,
       full_name: profile.full_name || "",
+      phone: profile.phone || "",
       shipping_address: profile.shipping_address || {},
       billing_address: profile.billing_address || {}
     };
