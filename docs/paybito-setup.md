@@ -21,6 +21,10 @@ PayBito is integrated as a hosted checkout provider. The browser never receives 
 
 - `PAYBITO_API_SECRET`: sent as `X-API-Secret` when present.
 - `PAYBITO_WEBHOOK_SECRET`: shared secret for webhook protection.
+- `PAYBITO_MERCHANT_ID`: sent in the checkout payload and as `X-Merchant-ID` when present.
+- `PAYBITO_BROKER_ID`: sent in the checkout payload and as `X-Broker-ID` when present.
+- `PAYBITO_CHECKOUT_BASE_URL`: base hosted checkout URL if PayBito returns a `paymentId`, `brokerId`, or PCN instead of a complete checkout URL.
+- `PAYBITO_USE_BEARER_AUTH`: set to `true` only if PayBito confirms the create-payment endpoint expects `Authorization: Bearer`.
 - `SITE_URL`: canonical public site URL, for example `https://beyondpeps.com`.
 
 ## Webhook URL
@@ -45,5 +49,12 @@ PayBito is disabled by default. In the admin panel:
 
 ## Notes
 
-The PayBito public documentation is less explicit than Shippo or Resend about exact hosted-checkout response fields. The integration accepts several common checkout URL fields, including `checkout_url`, `payment_url`, `redirect_url`, and `url`, either at the top level or inside `data`.
+The PayBito public documentation is less explicit than Shippo or Resend about exact hosted-checkout response fields. The integration accepts several common checkout URL fields, including `checkout_url`, `payment_url`, `redirect_url`, and `url`, either at the top level or inside `data`. It also supports PCN or `paymentId`/`brokerId` responses when `PAYBITO_CHECKOUT_BASE_URL` is set.
 
+If PayBito returns `401 Unauthorized`, check:
+
+- The API key is active for the selected live/test environment.
+- The create-payment URL matches the key environment.
+- The Beyond Peps domain is whitelisted in PayBito if required.
+- The Vercel serverless outbound IP is allowed if PayBito requires IP whitelisting.
+- `PAYBITO_USE_BEARER_AUTH` is only enabled if PayBito explicitly requires bearer auth.

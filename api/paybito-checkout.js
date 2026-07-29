@@ -37,36 +37,69 @@ function absoluteUrl(path = "") {
   return `${siteUrl()}${value.startsWith("/") ? "" : "/"}${value}`;
 }
 
+function nestedValue(payload = {}, keys = []) {
+  for (const key of keys) {
+    const value = key.split(".").reduce((node, part) => node?.[part], payload);
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
+function maybeBase64Json(value = {}) {
+  return Buffer.from(JSON.stringify(value)).toString("base64url");
+}
+
 function checkoutUrlFromPayload(payload = {}) {
-  return payload.checkout_url ||
-    payload.checkoutUrl ||
-    payload.payment_url ||
-    payload.paymentUrl ||
-    payload.redirect_url ||
-    payload.redirectUrl ||
-    payload.url ||
-    payload.data?.checkout_url ||
-    payload.data?.checkoutUrl ||
-    payload.data?.payment_url ||
-    payload.data?.paymentUrl ||
-    payload.data?.redirect_url ||
-    payload.data?.redirectUrl ||
-    payload.data?.url ||
-    "";
+  const directUrl = nestedValue(payload, [
+    "checkout_url",
+    "checkoutUrl",
+    "payment_url",
+    "paymentUrl",
+    "redirect_url",
+    "redirectUrl",
+    "url",
+    "data.checkout_url",
+    "data.checkoutUrl",
+    "data.payment_url",
+    "data.paymentUrl",
+    "data.redirect_url",
+    "data.redirectUrl",
+    "data.url"
+  ]);
+  if (directUrl) return directUrl;
+
+  const checkoutBase = env("PAYBITO_CHECKOUT_BASE_URL").replace(/\/$/, "");
+  if (!checkoutBase) return "";
+
+  const pcn = nestedValue(payload, ["pcn", "PCN", "data.pcn", "data.PCN"]);
+  if (pcn) return `${checkoutBase}/${encodeURIComponent(pcn)}`;
+
+  const paymentId = nestedValue(payload, ["paymentId", "payment_id", "id", "data.paymentId", "data.payment_id", "data.id"]);
+  const brokerId = nestedValue(payload, ["brokerId", "broker_id", "data.brokerId", "data.broker_id"]) || env("PAYBITO_BROKER_ID");
+  if (paymentId && brokerId) {
+    return `${checkoutBase}?data=${encodeURIComponent(maybeBase64Json({ paymentId, brokerId }))}`;
+  }
+
+  return "";
 }
 
 function providerReferenceFromPayload(payload = {}, fallback = "") {
-  return payload.id ||
-    payload.payment_id ||
-    payload.paymentId ||
-    payload.transaction_id ||
-    payload.transactionId ||
-    payload.data?.id ||
-    payload.data?.payment_id ||
-    payload.data?.paymentId ||
-    payload.data?.transaction_id ||
-    payload.data?.transactionId ||
-    fallback;
+  return nestedValue(payload, [
+    "id",
+    "payment_id",
+    "paymentId",
+    "transaction_id",
+    "transactionId",
+    "pcn",
+    "PCN",
+    "data.id",
+    "data.payment_id",
+    "data.paymentId",
+    "data.transaction_id",
+    "data.transactionId",
+    "data.pcn",
+    "data.PCN"
+  ]) || fallback;
 }
 
 function paybitoPayload({ order = {}, customer = {}, items = [], shippingRate = {} }) {
@@ -84,6 +117,8 @@ function paybitoPayload({ order = {}, customer = {}, items = [], shippingRate = 
     currency: order.currency || "USD",
     order_id: order.orderId,
     order_number: orderNumber,
+    merchant_id: env("PAYBITO_MERCHANT_ID") || undefined,
+    broker_id: env("PAYBITO_BROKER_ID") || undefined,
     reference: order.paymentReference,
     description: `Beyond Peps order ${orderNumber}`,
     success_url: successUrl,
@@ -115,13 +150,18 @@ async function createPaybitoPayment(body) {
   const endpoint = required(env("PAYBITO_CREATE_PAYMENT_URL"), "PAYBITO_CREATE_PAYMENT_URL");
   const apiKey = required(env("PAYBITO_API_KEY"), "PAYBITO_API_KEY");
   const apiSecret = env("PAYBITO_API_SECRET");
+  const merchantId = env("PAYBITO_MERCHANT_ID");
+  const brokerId = env("PAYBITO_BROKER_ID");
   const payload = paybitoPayload(body);
   const headers = {
-    Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
-    "X-API-Key": apiKey
+    "X-API-Key": apiKey,
+    apiKey
   };
+  if (env("PAYBITO_USE_BEARER_AUTH") === "true") headers.Authorization = `Bearer ${apiKey}`;
   if (apiSecret) headers["X-API-Secret"] = apiSecret;
+  if (merchantId) headers["X-Merchant-ID"] = merchantId;
+  if (brokerId) headers["X-Broker-ID"] = brokerId;
 
   const paybitoResponse = await fetch(endpoint, {
     method: "POST",
@@ -130,12 +170,13 @@ async function createPaybitoPayment(body) {
   });
   const responsePayload = await responseJson(paybitoResponse);
   if (!paybitoResponse.ok) {
-    throw new Error(responsePayload.message || responsePayload.error || "PayBito could not create a checkout session.");
+    const detail = responsePayload.message || responsePayload.error || responsePayload.detail || JSON.stringify(responsePayload);
+    throw new Error(`PayBito rejected checkout (${paybitoResponse.status}). ${detail || "Check API key, endpoint, domain/IP whitelist, and live/test environment."}`);
   }
 
   const checkoutUrl = checkoutUrlFromPayload(responsePayload);
   if (!checkoutUrl) {
-    throw new Error("PayBito did not return a checkout URL. Check PAYBITO_CREATE_PAYMENT_URL and merchant API response mapping.");
+    throw new Error("PayBito responded, but no checkout URL could be found. Add PAYBITO_CHECKOUT_BASE_URL if PayBito returns paymentId/brokerId or PCN instead of a full URL.");
   }
 
   return {
