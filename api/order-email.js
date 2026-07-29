@@ -51,6 +51,7 @@ function paymentMethod(body = {}) {
 
 function paymentLabel(method = "") {
   if (method === "zelle") return "Zelle";
+  if (method === "paybito") return "PayBito";
   if (method === "card" || method === "stripe") return "Card";
   if (method === "paypal") return "PayPal";
   if (method === "crypto") return "Crypto";

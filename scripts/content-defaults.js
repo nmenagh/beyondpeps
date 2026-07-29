@@ -80,6 +80,11 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
         "qrCodeImageUrl": "",
         "memoInstructions": "Include your order number in the Zelle memo.",
         "confirmationIntro": "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
+      },
+      "paybito": {
+        "enabled": false,
+        "displayName": "PayBito",
+        "checkoutNote": "Pay securely through PayBito. You will be redirected to complete payment."
       }
     }
   },

@@ -158,7 +158,9 @@
   }
 
   function paymentMethodSettings() {
-    const zelle = readSiteContent()?.site?.paymentMethods?.zelle || {};
+    const methods = readSiteContent()?.site?.paymentMethods || {};
+    const zelle = methods.zelle || {};
+    const paybito = methods.paybito || {};
     return {
       zelle: {
         enabled: zelle.enabled !== false,
@@ -170,12 +172,32 @@
         qrCodeImageUrl: zelle.qrCodeImageUrl || "",
         memoInstructions: zelle.memoInstructions || "Include your order number in the Zelle memo.",
         confirmationIntro: zelle.confirmationIntro || "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
+      },
+      paybito: {
+        enabled: Boolean(paybito.enabled),
+        displayName: paybito.displayName || "PayBito",
+        checkoutNote: paybito.checkoutNote || "Pay securely through PayBito. You will be redirected to complete payment."
       }
     };
   }
 
   function readPaymentMethod() {
     return localStorage.getItem(PAYMENT_METHOD_KEY) || "zelle";
+  }
+
+  function enabledPaymentMethods(settings = {}) {
+    return [
+      settings.zelle?.enabled ? "zelle" : "",
+      settings.paybito?.enabled ? "paybito" : ""
+    ].filter(Boolean);
+  }
+
+  function selectedAvailablePaymentMethod(settings = {}) {
+    const selected = readPaymentMethod();
+    const enabled = enabledPaymentMethods(settings);
+    const method = enabled.includes(selected) ? selected : enabled[0] || "";
+    if (method && method !== selected) localStorage.setItem(PAYMENT_METHOD_KEY, method);
+    return method;
   }
 
   function shippingLabel(rate) {
@@ -244,6 +266,17 @@
           <span>
             <strong>${escapeHtml(settings.zelle.displayName || "Zelle")}</strong>
             <small>Place the order now and receive payment instructions by email.</small>
+          </span>
+        </label>
+      `);
+    }
+    if (settings.paybito?.enabled) {
+      options.push(`
+        <label class="payment-rate ${selectedMethod === "paybito" ? "is-selected" : ""}">
+          <input type="radio" name="paymentMethod" value="paybito"${selectedMethod === "paybito" ? " checked" : ""}>
+          <span>
+            <strong>${escapeHtml(settings.paybito.displayName || "PayBito")}</strong>
+            <small>${escapeHtml(settings.paybito.checkoutNote || "Pay securely through PayBito. You will be redirected to complete payment.")}</small>
           </span>
         </label>
       `);
@@ -388,7 +421,7 @@
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const selectedRate = readShippingRate();
     const paymentSettings = paymentMethodSettings();
-    const selectedPaymentMethod = readPaymentMethod();
+    const selectedPaymentMethod = selectedAvailablePaymentMethod(paymentSettings);
     const total = subtotal + Number(selectedRate?.amount || 0);
     summary.innerHTML = `
       ${renderShippingForm(readShippingAddress(), selectedRate, readShippingRates())}
@@ -470,7 +503,16 @@
         await renderCart("Please add an email address so we can send your order confirmation.");
         return;
       }
-      if (readPaymentMethod() !== "zelle" || !paymentSettings.zelle?.enabled) {
+      const paymentMethod = selectedAvailablePaymentMethod(paymentSettings);
+      if (paymentMethod === "zelle" && !paymentSettings.zelle?.enabled) {
+        await renderCart("Please choose an available payment method.");
+        return;
+      }
+      if (paymentMethod === "paybito" && !paymentSettings.paybito?.enabled) {
+        await renderCart("Please choose an available payment method.");
+        return;
+      }
+      if (!["zelle", "paybito"].includes(paymentMethod)) {
         await renderCart("Please choose an available payment method.");
         return;
       }
@@ -485,7 +527,16 @@
       }
 
       try {
-        const order = await window.BeyondPepsSupabase.createZelleOrder({
+        const order = paymentMethod === "paybito"
+          ? await window.BeyondPepsSupabase.createPaymentOrder({
+            cartId: window.BeyondPepsCart.cartId(),
+            paymentProvider: "paybito",
+            customer: { name: address.name, email: address.email, phone: address.phone },
+            shippingAddress: address,
+            shippingRate: readShippingRate(),
+            items
+          })
+          : await window.BeyondPepsSupabase.createZelleOrder({
           cartId: window.BeyondPepsCart.cartId(),
           customer: { name: address.name, email: address.email, phone: address.phone },
           shippingAddress: address,
@@ -498,6 +549,19 @@
           valueCents: order.totalCents,
           metadata: { order_number: order.orderNumber || "", item_count: items.reduce((sum, item) => sum + item.quantity, 0) }
         });
+
+        if (paymentMethod === "paybito") {
+          button.textContent = "Opening PayBito...";
+          const session = await startPaybitoCheckout(order, address, items, readShippingRate());
+          window.BeyondPepsCart.clearCart();
+          clearShippingRates();
+          sessionStorage.setItem("beyondPepsLastPaybitoOrder", JSON.stringify({
+            orderNumber: order.orderNumber,
+            orderId: order.orderId
+          }));
+          window.location.href = session.checkoutUrl;
+          return;
+        }
 
         const emailResult = await sendOrderConfirmation(order, address, items, readShippingRate(), paymentSettings);
         window.BeyondPepsCart.clearCart();
@@ -544,6 +608,20 @@
       console.warn("Confirmation email did not send.", error);
       return { sent: false, reason: error.message };
     }
+  }
+
+  async function startPaybitoCheckout(order, address, items, shippingRate) {
+    const response = await fetch("/api/paybito-checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customer: { name: address.name, email: address.email, phone: address.phone },
+        order,
+        items,
+        shippingRate
+      })
+    });
+    return readApiResponse(response, "PayBito checkout is temporarily unavailable.");
   }
 
   document.addEventListener("DOMContentLoaded", () => {

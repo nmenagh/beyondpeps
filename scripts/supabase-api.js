@@ -399,6 +399,27 @@
     });
   }
 
+  async function createPaymentOrder({ cartId, paymentProvider, customer, shippingAddress, shippingRate, items }) {
+    if (!isConfigured()) {
+      throw new Error("Supabase URL or anon key is missing.");
+    }
+
+    return request("/rest/v1/rpc/beyond_peps_create_payment_order", {
+      method: "POST",
+      body: {
+        p_cart_id: cartId,
+        p_payment_provider: paymentProvider,
+        p_customer: customer || {},
+        p_shipping_address: shippingAddress || {},
+        p_shipping_rate: shippingRate || {},
+        p_items: (items || []).map((item) => ({
+          id: item.id,
+          quantity: Math.max(0, Math.floor(Number(item.quantity || 0)))
+        })).filter((item) => item.id && item.quantity > 0)
+      }
+    });
+  }
+
   async function uploadMedia(file, folder = "uploads") {
     if (!isConfigured()) {
       throw new Error("Supabase URL or anon key is missing.");
@@ -787,6 +808,7 @@
     clearSession,
     currentUser,
     currentUserIsAdmin,
+    createPaymentOrder,
     createZelleOrder,
     cancelCrmCampaign,
     deleteEmailTemplate,

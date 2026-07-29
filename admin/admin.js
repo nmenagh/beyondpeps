@@ -383,6 +383,7 @@ function normalizeShippingMethods(value = {}) {
 
 function normalizePaymentMethods(value = {}) {
   const zelle = value.zelle || {};
+  const paybito = value.paybito || {};
   return {
     zelle: {
       enabled: zelle.enabled !== false,
@@ -394,6 +395,11 @@ function normalizePaymentMethods(value = {}) {
       qrCodeImageUrl: zelle.qrCodeImageUrl || "",
       memoInstructions: zelle.memoInstructions || "Include your order number in the Zelle memo.",
       confirmationIntro: zelle.confirmationIntro || "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
+    },
+    paybito: {
+      enabled: Boolean(paybito.enabled),
+      displayName: paybito.displayName || "PayBito",
+      checkoutNote: paybito.checkoutNote || "Pay securely through PayBito. You will be redirected to complete payment."
     }
   };
 }
@@ -683,8 +689,8 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
     return panel;
   }
 
-  if (type === "payment_settings") {
-    const settings = normalizePaymentMethods(value);
+  if (type === "zelle_payment_settings") {
+    const settings = normalizePaymentMethods({ zelle: value });
     const panel = document.createElement("div");
     panel.className = "payment-method-admin field-wide";
 
@@ -697,51 +703,87 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
     const zelle = settings.zelle;
     const enabled = field("Enable Zelle checkout", zelle.enabled, (next) => {
       zelle.enabled = next;
-      onInput(settings);
+      onInput(settings.zelle);
       return true;
     }, "checkbox");
     const displayName = field("Payment label", zelle.displayName, (next) => {
       zelle.displayName = next;
-      onInput(settings);
+      onInput(settings.zelle);
       return true;
     });
     const recipientName = field("Zelle recipient name", zelle.recipientName, (next) => {
       zelle.recipientName = next;
-      onInput(settings);
+      onInput(settings.zelle);
       return true;
     });
     const recipientEmail = field("Zelle email", zelle.recipientEmail, (next) => {
       zelle.recipientEmail = next;
-      onInput(settings);
+      onInput(settings.zelle);
       return true;
     }, "email");
     const recipientPhone = field("Zelle phone", zelle.recipientPhone, (next) => {
       zelle.recipientPhone = next;
-      onInput(settings);
+      onInput(settings.zelle);
       return true;
     }, "tel");
     const paymentLink = field("Zelle payment link", zelle.paymentLink, (next) => {
       zelle.paymentLink = next;
-      onInput(settings);
+      onInput(settings.zelle);
       return true;
     }, "url", true);
     const qrCodeImageUrl = field("Zelle QR code image", zelle.qrCodeImageUrl, (next) => {
       zelle.qrCodeImageUrl = next;
-      onInput(settings);
+      onInput(settings.zelle);
       return true;
     }, "image", true, "payments");
     const memoInstructions = field("Memo instructions", zelle.memoInstructions, (next) => {
       zelle.memoInstructions = next;
-      onInput(settings);
+      onInput(settings.zelle);
       return true;
     }, "textarea", true);
     const confirmationIntro = field("Customer confirmation message", zelle.confirmationIntro, (next) => {
       zelle.confirmationIntro = next;
-      onInput(settings);
+      onInput(settings.zelle);
       return true;
     }, "textarea", true);
 
     panel.append(heading, enabled, displayName, recipientName, recipientEmail, recipientPhone, paymentLink, qrCodeImageUrl, memoInstructions, confirmationIntro);
+    return panel;
+  }
+
+  if (type === "paybito_payment_settings") {
+    const settings = normalizePaymentMethods({ paybito: value });
+    const paybito = settings.paybito;
+    const panel = document.createElement("div");
+    panel.className = "payment-method-admin field-wide";
+
+    const heading = document.createElement("div");
+    heading.innerHTML = `
+      <span class="admin-field-label">${escapeAttribute(label)}</span>
+      <p>PayBito API credentials are stored as Vercel environment variables. These settings only control customer-facing checkout copy.</p>
+    `;
+
+    const enabled = field("Enable PayBito checkout", paybito.enabled, (next) => {
+      paybito.enabled = next;
+      onInput(paybito);
+      return true;
+    }, "checkbox");
+    const displayName = field("Payment label", paybito.displayName, (next) => {
+      paybito.displayName = next;
+      onInput(paybito);
+      return true;
+    });
+    const checkoutNote = field("Checkout note", paybito.checkoutNote, (next) => {
+      paybito.checkoutNote = next;
+      onInput(paybito);
+      return true;
+    }, "textarea", true);
+
+    const envNote = document.createElement("p");
+    envNote.className = "admin-note";
+    envNote.textContent = "Required Vercel env vars: PAYBITO_CREATE_PAYMENT_URL and PAYBITO_API_KEY. Optional: PAYBITO_API_SECRET and PAYBITO_WEBHOOK_SECRET.";
+
+    panel.append(heading, enabled, displayName, checkoutNote, envNote);
     return panel;
   }
 
@@ -1072,7 +1114,21 @@ function renderPaymentFields() {
       activePaymentSectionId = "zelle";
       renderAll();
     });
-    grid.append(zelleTile);
+    const paybitoTile = document.createElement("button");
+    paybitoTile.className = "page-copy-tile";
+    paybitoTile.type = "button";
+    paybitoTile.innerHTML = `
+      <span class="page-copy-index">PB</span>
+      <span class="page-copy-text">
+        <strong>PayBito</strong>
+        <small>Hosted checkout toggle and customer-facing payment copy.</small>
+      </span>
+    `;
+    paybitoTile.addEventListener("click", () => {
+      activePaymentSectionId = "paybito";
+      renderAll();
+    });
+    grid.append(paybitoTile, zelleTile);
     root.append(grid);
     return;
   }
@@ -1087,9 +1143,22 @@ function renderPaymentFields() {
   });
   root.append(back);
 
-  root.append(field("Zelle payment settings", content.site.paymentMethods, (value) => {
-    content.site.paymentMethods = normalizePaymentMethods(value);
-  }, "payment_settings"));
+  if (activePaymentSectionId === "paybito") {
+    root.append(field("PayBito payment settings", content.site.paymentMethods?.paybito || {}, (value) => {
+      content.site.paymentMethods = normalizePaymentMethods({
+        ...content.site.paymentMethods,
+        paybito: value
+      });
+    }, "paybito_payment_settings"));
+    return;
+  }
+
+  root.append(field("Zelle payment settings", content.site.paymentMethods?.zelle || {}, (value) => {
+    content.site.paymentMethods = normalizePaymentMethods({
+      ...content.site.paymentMethods,
+      zelle: value
+    });
+  }, "zelle_payment_settings"));
 
   const tester = document.createElement("article");
   tester.className = "payment-test-card field-wide";
