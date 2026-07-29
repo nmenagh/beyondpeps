@@ -55,6 +55,31 @@
     }
   }
 
+  function supabaseConfig() {
+    return window.BEYOND_PEPS_SUPABASE || {};
+  }
+
+  function supabaseSession() {
+    return readJson("beyondPepsSupabaseSession", null);
+  }
+
+  async function supabaseRpc(path, body = {}) {
+    const { url, anonKey } = supabaseConfig();
+    if (!url || !anonKey) throw new Error("Supabase URL or anon key is missing.");
+    const session = supabaseSession();
+    const response = await fetch(`${url.replace(/\/$/, "")}${path}`, {
+      method: "POST",
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${session?.access_token || anonKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation"
+      },
+      body: JSON.stringify(body)
+    });
+    return readApiResponse(response, "Payment order could not be created.");
+  }
+
   async function readApiResponse(response, fallbackMessage) {
     const text = await response.text();
     let data = {};
@@ -329,6 +354,23 @@
     return data;
   }
 
+  async function createPaymentOrder(orderInput) {
+    if (typeof window.BeyondPepsSupabase?.createPaymentOrder === "function") {
+      return window.BeyondPepsSupabase.createPaymentOrder(orderInput);
+    }
+    return supabaseRpc("/rest/v1/rpc/beyond_peps_create_payment_order", {
+      p_cart_id: orderInput.cartId,
+      p_payment_provider: orderInput.paymentProvider,
+      p_customer: orderInput.customer || {},
+      p_shipping_address: orderInput.shippingAddress || {},
+      p_shipping_rate: orderInput.shippingRate || {},
+      p_items: (orderInput.items || []).map((item) => ({
+        id: item.id,
+        quantity: Math.max(0, Math.floor(Number(item.quantity || 0)))
+      })).filter((item) => item.id && item.quantity > 0)
+    });
+  }
+
   function scheduleShippingCalculation(delay = 500) {
     window.clearTimeout(shippingCalculationTimer);
     if (!window.BeyondPepsCart.readCart().length) return;
@@ -528,7 +570,7 @@
 
       try {
         const order = paymentMethod === "paybito"
-          ? await window.BeyondPepsSupabase.createPaymentOrder({
+          ? await createPaymentOrder({
             cartId: window.BeyondPepsCart.cartId(),
             paymentProvider: "paybito",
             customer: { name: address.name, email: address.email, phone: address.phone },
