@@ -51,7 +51,7 @@ const productSchema = [
   ["id", "ID"],
   ["name", "Name"],
   ["category", "Category"],
-  ["price", "Price", "number"],
+  ["price", "Price", "currency"],
   ["stockLevel", "Stock level", "number"],
   ["productWeight", "Product weight (oz)", "number"],
   ["status", "Status", "product_status"],
@@ -969,10 +969,15 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
   }
 
   const control = document.createElement(type === "textarea" ? "textarea" : "input");
-  if (type !== "textarea") control.type = type;
+  if (type !== "textarea") control.type = type === "currency" ? "number" : type;
+  if (type === "currency") {
+    control.step = "0.01";
+    control.min = "0";
+    control.inputMode = "decimal";
+  }
   control.value = value ?? "";
   control.addEventListener("input", () => {
-    onInput(type === "number" ? Number(control.value) : control.value);
+    onInput(type === "number" || type === "currency" ? Number(control.value) : control.value);
   });
   wrap.append(control);
   return wrap;
