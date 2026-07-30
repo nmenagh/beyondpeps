@@ -13,18 +13,18 @@ PayBito is integrated as a hosted checkout provider. The browser never receives 
 
 ## Required Vercel Environment Variables
 
-- `PAYBITO_CREATE_PAYMENT_URL`: the full PayBito merchant API URL for creating a hosted checkout/payment.
-- `PAYBITO_API_KEY`: PayBito merchant API key.
+- `PAYBITO_API_KEY`: PayBito public/test API key. The test docs show this as a `pk_...` key.
+- `PAYBITO_MERCHANT_ID`: PayBito merchant ID.
 - `SUPABASE_SERVICE_ROLE_KEY`: required so serverless endpoints can update orders/payment attempts.
 
 ## Optional Vercel Environment Variables
 
-- `PAYBITO_API_SECRET`: sent as `X-API-Secret` when present.
 - `PAYBITO_WEBHOOK_SECRET`: shared secret for webhook protection.
-- `PAYBITO_MERCHANT_ID`: sent in the checkout payload and as `X-Merchant-ID` when present.
 - `PAYBITO_BROKER_ID`: sent in the checkout payload and as `X-Broker-ID` when present.
-- `PAYBITO_CHECKOUT_BASE_URL`: base hosted checkout URL if PayBito returns a `paymentId`, `brokerId`, or PCN instead of a complete checkout URL.
-- `PAYBITO_USE_BEARER_AUTH`: set to `true` only if PayBito confirms the create-payment endpoint expects `Authorization: Bearer`.
+- `PAYBITO_BASE_URL`: defaults to `https://trade.paybito.com`.
+- `PAYBITO_ORIGIN`: defaults to `SITE_URL`; use `https://beyondpeps.com` for the domain whitelist origin.
+- `PAYBITO_CATALOG_ID`: defaults to `0`.
+- `PAYBITO_CHECKOUT_BASE_URL`: defaults to `https://portal.paybito.com/payments/merchant/checkout/`.
 - `SITE_URL`: canonical public site URL, for example `https://beyondpeps.com`.
 
 ## Webhook URL
@@ -49,12 +49,26 @@ PayBito is disabled by default. In the admin panel:
 
 ## Notes
 
-The PayBito public documentation is less explicit than Shippo or Resend about exact hosted-checkout response fields. The integration accepts several common checkout URL fields, including `checkout_url`, `payment_url`, `redirect_url`, and `url`, either at the top level or inside `data`. It also supports PCN or `paymentId`/`brokerId` responses when `PAYBITO_CHECKOUT_BASE_URL` is set.
+The PayBito test-mode OpenAPI file documents a three-step cart flow:
+
+1. `GET /TestPayments-Apikey-V2/api/v1/validate`
+   - Headers: `publicKey`, `Origin`
+   - Returns a temporary `secretHash` / `clientSecret`.
+2. `POST /TestPayments-Apikey-V2/shopping/products/register`
+   - Headers: `X-MBX-PUBLIC-KEY`, `CLIENT-SECRET-KEY`, `Origin`
+   - Registers cart products and returns `cartToken` and `catalogId`.
+3. `POST /TestPayments-Apikey-V2/shopping/payment/create`
+   - Headers: `X-MBX-PUBLIC-KEY`, `CLIENT-SECRET-KEY`, `Origin`
+   - Returns `id` / PCN and `brokerId`.
+
+The checkout URL is built as:
+
+```text
+https://portal.paybito.com/payments/merchant/checkout/?data=BASE64URL({"paymentId":"PCN...","merchantId":"...","brokerId":"..."})
+```
 
 If PayBito returns `401 Unauthorized`, check:
 
-- The API key is active for the selected live/test environment.
-- The create-payment URL matches the key environment.
+- The API key is active for the selected live/test environment and starts with `pk_` for this cart flow.
 - The Beyond Peps domain is whitelisted in PayBito if required.
-- The Vercel serverless outbound IP is allowed if PayBito requires IP whitelisting.
-- `PAYBITO_USE_BEARER_AUTH` is only enabled if PayBito explicitly requires bearer auth.
+- `PAYBITO_ORIGIN` exactly matches the whitelisted domain format PayBito expects.

@@ -37,6 +37,15 @@ function absoluteUrl(path = "") {
   return `${siteUrl()}${value.startsWith("/") ? "" : "/"}${value}`;
 }
 
+function paybitoBaseUrl() {
+  return env("PAYBITO_BASE_URL", "https://trade.paybito.com").replace(/\/$/, "");
+}
+
+function paybitoOrigin() {
+  const configured = env("PAYBITO_ORIGIN", siteUrl()).replace(/\/$/, "");
+  return configured || "https://beyondpeps.com";
+}
+
 function nestedValue(payload = {}, keys = []) {
   for (const key of keys) {
     const value = key.split(".").reduce((node, part) => node?.[part], payload);
@@ -49,7 +58,20 @@ function maybeBase64Json(value = {}) {
   return Buffer.from(JSON.stringify(value)).toString("base64url");
 }
 
-function checkoutUrlFromPayload(payload = {}) {
+function checkoutBaseUrl() {
+  return env("PAYBITO_CHECKOUT_BASE_URL", "https://portal.paybito.com/payments/merchant/checkout/").replace(/\/$/, "");
+}
+
+function checkoutUrlForPcn({ paymentId, merchantId, brokerId }) {
+  const data = maybeBase64Json({
+    paymentId,
+    merchantId: String(merchantId),
+    brokerId
+  });
+  return `${checkoutBaseUrl()}/?data=${encodeURIComponent(data)}`;
+}
+
+function checkoutUrlFromPayload(payload = {}, merchantId = "") {
   const directUrl = nestedValue(payload, [
     "checkout_url",
     "checkoutUrl",
@@ -68,17 +90,11 @@ function checkoutUrlFromPayload(payload = {}) {
   ]);
   if (directUrl) return directUrl;
 
-  const checkoutBase = env("PAYBITO_CHECKOUT_BASE_URL").replace(/\/$/, "");
-  if (!checkoutBase) return "";
-
   const pcn = nestedValue(payload, ["pcn", "PCN", "data.pcn", "data.PCN"]);
-  if (pcn) return `${checkoutBase}/${encodeURIComponent(pcn)}`;
-
-  const paymentId = nestedValue(payload, ["paymentId", "payment_id", "id", "data.paymentId", "data.payment_id", "data.id"]);
+  const paymentId = pcn || nestedValue(payload, ["paymentId", "payment_id", "id", "data.paymentId", "data.payment_id", "data.id"]);
   const brokerId = nestedValue(payload, ["brokerId", "broker_id", "data.brokerId", "data.broker_id"]) || env("PAYBITO_BROKER_ID");
-  if (paymentId && brokerId) {
-    return `${checkoutBase}?data=${encodeURIComponent(maybeBase64Json({ paymentId, brokerId }))}`;
-  }
+
+  if (paymentId && brokerId && merchantId) return checkoutUrlForPcn({ paymentId, merchantId, brokerId });
 
   return "";
 }
@@ -146,43 +162,193 @@ function paybitoPayload({ order = {}, customer = {}, items = [], shippingRate = 
   };
 }
 
-async function createPaybitoPayment(body) {
-  const endpoint = required(env("PAYBITO_CREATE_PAYMENT_URL"), "PAYBITO_CREATE_PAYMENT_URL");
-  const apiKey = required(env("PAYBITO_API_KEY"), "PAYBITO_API_KEY");
-  const apiSecret = env("PAYBITO_API_SECRET");
-  const merchantId = env("PAYBITO_MERCHANT_ID");
-  const brokerId = env("PAYBITO_BROKER_ID");
-  const payload = paybitoPayload(body);
-  const headers = {
-    "Content-Type": "application/json",
-    "X-API-Key": apiKey,
-    apiKey
-  };
-  if (env("PAYBITO_USE_BEARER_AUTH") === "true") headers.Authorization = `Bearer ${apiKey}`;
-  if (apiSecret) headers["X-API-Secret"] = apiSecret;
-  if (merchantId) headers["X-Merchant-ID"] = merchantId;
-  if (brokerId) headers["X-Broker-ID"] = brokerId;
-
-  const paybitoResponse = await fetch(endpoint, {
-    method: "POST",
+async function paybitoFetch(pathOrUrl, { method = "GET", headers = {}, body } = {}) {
+  const url = /^https?:\/\//i.test(pathOrUrl) ? pathOrUrl : `${paybitoBaseUrl()}${pathOrUrl}`;
+  const paybitoResponse = await fetch(url, {
+    method,
     headers,
-    body: JSON.stringify(payload)
+    body: body ? JSON.stringify(body) : undefined
   });
   const responsePayload = await responseJson(paybitoResponse);
   if (!paybitoResponse.ok) {
     const detail = responsePayload.message || responsePayload.error || responsePayload.detail || JSON.stringify(responsePayload);
-    throw new Error(`PayBito rejected checkout (${paybitoResponse.status}). ${detail || "Check API key, endpoint, domain/IP whitelist, and live/test environment."}`);
+    throw new Error(`PayBito rejected checkout (${paybitoResponse.status}). ${detail || "Check API key, secret key, origin/domain whitelist, and live/test environment."}`);
+  }
+  return responsePayload;
+}
+
+async function createClientSecret(apiKey) {
+  const payload = await paybitoFetch("/TestPayments-Apikey-V2/api/v1/validate", {
+    headers: {
+      publicKey: apiKey,
+      Origin: paybitoOrigin()
+    }
+  });
+  const secretHash = nestedValue(payload, ["secretHash", "data.secretHash"]);
+  const clientSecret = nestedValue(payload, ["clientSecret", "data.clientSecret"]);
+  if (!secretHash && !clientSecret) {
+    throw new Error("PayBito validation succeeded, but no client secret was returned.");
+  }
+  return {
+    secretHash,
+    clientSecret,
+    rawResponse: payload
+  };
+}
+
+function cartApiHeaders(apiKey, clientSecret) {
+  return {
+    "Content-Type": "application/json",
+    "X-MBX-PUBLIC-KEY": apiKey,
+    "CLIENT-SECRET-KEY": clientSecret.secretHash || clientSecret.clientSecret,
+    Origin: paybitoOrigin()
+  };
+}
+
+function safeProductId(value = "") {
+  return String(value || "item").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-|-$/g, "").slice(0, 64) || "item";
+}
+
+function paybitoProducts({ items = [], shippingRate = {}, order = {} }) {
+  const products = items.map((item) => ({
+    productId: safeProductId(item.id),
+    productType: "CART",
+    quantity: Math.max(1, Number(item.quantity || 1)),
+    name: item.name || item.id || "Beyond Peps item",
+    description: item.summary || item.description || item.name || item.id || "Beyond Peps item",
+    imageUrl: item.imageUrl || "",
+    attributes: {},
+    metadata: {
+      beyondPepsProductId: item.id,
+      orderId: order.orderId,
+      paymentReference: order.paymentReference
+    },
+    prices: [{
+      priceId: 0,
+      isDefault: true,
+      priceType: "one-time",
+      intervalType: "",
+      intervalCount: 0,
+      trialDays: 0,
+      retryAttempts: 0,
+      totalCycles: 0,
+      retryInterval: "",
+      variant: {},
+      sku: safeProductId(item.id),
+      inventory: {
+        track: false,
+        quantity: Math.max(1, Number(item.quantity || 1))
+      },
+      currencies: [{
+        currency: order.currency || "USD",
+        amount: Number(item.price || 0),
+        isDefault: true
+      }]
+    }]
+  }));
+
+  const shippingAmount = Number(shippingRate?.amount || 0);
+  if (shippingAmount > 0) {
+    products.push({
+      productId: `shipping-${safeProductId(order.orderNumber || order.orderId)}`,
+      productType: "CART",
+      quantity: 1,
+      name: "Shipping",
+      description: [shippingRate.provider, shippingRate.servicelevel].filter(Boolean).join(" - ") || "Shipping",
+      imageUrl: "",
+      attributes: {},
+      metadata: {
+        orderId: order.orderId,
+        paymentReference: order.paymentReference,
+        type: "shipping"
+      },
+      prices: [{
+        priceId: 0,
+        isDefault: true,
+        priceType: "one-time",
+        intervalType: "",
+        intervalCount: 0,
+        trialDays: 0,
+        retryAttempts: 0,
+        totalCycles: 0,
+        retryInterval: "",
+        variant: {},
+        sku: `shipping-${safeProductId(order.orderNumber || order.orderId)}`,
+        inventory: {
+          track: false,
+          quantity: 1
+        },
+        currencies: [{
+          currency: order.currency || "USD",
+          amount: shippingAmount,
+          isDefault: true
+        }]
+      }]
+    });
   }
 
-  const checkoutUrl = checkoutUrlFromPayload(responsePayload);
+  return products;
+}
+
+async function registerCart(body, apiKey, clientSecret) {
+  const merchantId = Number(required(env("PAYBITO_MERCHANT_ID"), "PAYBITO_MERCHANT_ID"));
+  const catalogId = Number(env("PAYBITO_CATALOG_ID", "0")) || 0;
+  const payload = await paybitoFetch("/TestPayments-Apikey-V2/shopping/products/register", {
+    method: "POST",
+    headers: cartApiHeaders(apiKey, clientSecret),
+    body: {
+      merchantId,
+      catalogId,
+      cartToken: "",
+      products: paybitoProducts(body)
+    }
+  });
+  const cartToken = nestedValue(payload, ["data.cartToken", "cartToken"]);
+  const returnedCatalogId = Number(nestedValue(payload, ["data.catalogId", "catalogId"])) || catalogId;
+  if (!cartToken) throw new Error("PayBito cart registration succeeded, but no cart token was returned.");
+  return {
+    cartToken,
+    catalogId: returnedCatalogId,
+    rawResponse: payload
+  };
+}
+
+async function initiateCheckout(body, apiKey, clientSecret, cart) {
+  const merchantId = Number(required(env("PAYBITO_MERCHANT_ID"), "PAYBITO_MERCHANT_ID"));
+  const order = body.order || {};
+  const payload = await paybitoFetch("/TestPayments-Apikey-V2/shopping/payment/create", {
+    method: "POST",
+    headers: cartApiHeaders(apiKey, clientSecret),
+    body: {
+      merchantId,
+      cartToken: cart.cartToken,
+      paymentName: `Beyond Peps order ${order.orderNumber || order.orderId}`,
+      catalogId: cart.catalogId
+    }
+  });
+  return payload;
+}
+
+async function createCartPayment(body) {
+  const apiKey = required(env("PAYBITO_API_KEY"), "PAYBITO_API_KEY");
+  required(env("PAYBITO_MERCHANT_ID"), "PAYBITO_MERCHANT_ID");
+  const clientSecret = await createClientSecret(apiKey);
+  const cart = await registerCart(body, apiKey, clientSecret);
+  const responsePayload = await initiateCheckout(body, apiKey, clientSecret, cart);
+
+  const checkoutUrl = checkoutUrlFromPayload(responsePayload, env("PAYBITO_MERCHANT_ID"));
   if (!checkoutUrl) {
-    throw new Error("PayBito responded, but no checkout URL could be found. Add PAYBITO_CHECKOUT_BASE_URL if PayBito returns paymentId/brokerId or PCN instead of a full URL.");
+    throw new Error("PayBito responded, but no checkout URL could be built from the checkout response.");
   }
 
   return {
     checkoutUrl,
     providerReference: providerReferenceFromPayload(responsePayload, body.order?.paymentReference),
-    rawResponse: responsePayload
+    rawResponse: {
+      validation: clientSecret.rawResponse,
+      cart: cart.rawResponse,
+      checkout: responsePayload
+    }
   };
 }
 
@@ -232,7 +398,7 @@ module.exports = async function handler(request, response) {
     if (!order.orderId) throw new Error("Order id is required.");
     if (!order.paymentReference) throw new Error("Order payment reference is required.");
 
-    const session = await createPaybitoPayment(body);
+    const session = await createCartPayment(body);
     await savePaybitoSession(order, session);
     json(response, 200, {
       ok: true,

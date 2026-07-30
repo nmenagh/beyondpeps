@@ -51,12 +51,19 @@ function orderLookup(body = {}) {
   return {
     orderId: nestedValue(body, ["order_id", "orderId", "metadata.orderId", "data.order_id", "data.orderId", "data.metadata.orderId"]),
     orderNumber: nestedValue(body, ["order_number", "orderNumber", "metadata.orderNumber", "data.order_number", "data.orderNumber", "data.metadata.orderNumber"]),
-    paymentReference: nestedValue(body, ["reference", "payment_reference", "paymentReference", "metadata.paymentReference", "data.reference", "data.payment_reference", "data.paymentReference", "data.metadata.paymentReference"]),
-    providerReference: nestedValue(body, ["id", "payment_id", "paymentId", "transaction_id", "transactionId", "data.id", "data.payment_id", "data.paymentId", "data.transaction_id", "data.transactionId"])
+    paymentReference: nestedValue(body, ["reference", "payment_reference", "paymentReference", "payment_link_id", "metadata.paymentReference", "data.reference", "data.payment_reference", "data.paymentReference", "data.payment_link_id", "data.metadata.paymentReference"]),
+    providerReference: nestedValue(body, ["id", "payment_id", "paymentId", "payment_link_id", "txn_id", "transaction_id", "transactionId", "data.id", "data.payment_id", "data.paymentId", "data.payment_link_id", "data.txn_id", "data.transaction_id", "data.transactionId"])
   };
 }
 
 function providerStatus(body = {}) {
+  const eventName = String(nestedValue(body, ["event_name", "eventName", "data.event_name", "data.eventName"]) || "").trim().toLowerCase();
+  if (eventName === "payment.succeeded" || eventName === "checkout.session.completed" || eventName === "charge.succeeded") return "paid";
+  if (eventName === "payment.failed" || eventName === "charge.failed") return "failed";
+  if (eventName === "payment.refunded") return "refunded";
+  if (eventName === "checkout.session.expired") return "cancelled";
+  if (eventName === "payment.pending" || eventName === "payment.created" || eventName === "checkout.session.created") return "pending";
+
   return String(nestedValue(body, [
     "status",
     "payment_status",
