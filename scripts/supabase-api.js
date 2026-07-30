@@ -65,7 +65,7 @@
       id: product.slug || product.id,
       name: product.name || product.title,
       category: product.category || "Research Supplies",
-      price: Math.round((product.price_cents || 0) / 100),
+      price: Number(product.price_cents || 0) / 100,
       status: dbStatusToUi(product.status),
       summary: product.summary || product.description || "",
       description: product.description || product.summary || "",
