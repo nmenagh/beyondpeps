@@ -54,6 +54,63 @@ function nestedValue(payload = {}, keys = []) {
   return "";
 }
 
+function maybeJsonString(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || !/^[{[]/.test(trimmed)) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return null;
+  }
+}
+
+function normalizedKey(key = "") {
+  return String(key).replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+function findValueByKeys(source, allowedKeys = new Set(), depth = 0) {
+  if (source === undefined || source === null || depth > 5) return "";
+  const parsed = maybeJsonString(source);
+  if (parsed) return findValueByKeys(parsed, allowedKeys, depth + 1);
+  if (typeof source === "string") return "";
+  if (Array.isArray(source)) {
+    for (const item of source) {
+      const value = findValueByKeys(item, allowedKeys, depth + 1);
+      if (value) return value;
+    }
+    return "";
+  }
+  if (typeof source !== "object") return "";
+  for (const [key, value] of Object.entries(source)) {
+    if (allowedKeys.has(normalizedKey(key)) && value !== undefined && value !== null && String(value).trim() !== "") {
+      return value;
+    }
+  }
+  for (const value of Object.values(source)) {
+    const found = findValueByKeys(value, allowedKeys, depth + 1);
+    if (found) return found;
+  }
+  return "";
+}
+
+function redacted(value = "") {
+  return String(value)
+    .replace(/pk_[a-z0-9_-]+/gi, "pk_[redacted]")
+    .replace(/csk_[a-z0-9_-]+/gi, "csk_[redacted]")
+    .replace(/[a-f0-9]{48,}/gi, "[redacted]");
+}
+
+function responseShape(payload = {}) {
+  const parsed = maybeJsonString(payload) || payload;
+  if (parsed === undefined || parsed === null) return "empty response";
+  if (typeof parsed !== "object") return redacted(String(parsed)).slice(0, 180);
+  if (Array.isArray(parsed)) return `array(${parsed.length})`;
+  const keys = Object.keys(parsed).slice(0, 12).join(", ") || "no top-level keys";
+  const message = redacted(nestedValue(parsed, ["message", "error_msg", "errorMessage", "detail"]) || "").slice(0, 180);
+  return message ? `keys: ${keys}; message: ${message}` : `keys: ${keys}`;
+}
+
 function encodedCheckoutPayload(value = {}) {
   const encoding = String(env("PAYBITO_CHECKOUT_DATA_ENCODING", "base64")).trim().toLowerCase();
   return Buffer.from(JSON.stringify(value)).toString(encoding === "base64url" ? "base64url" : "base64");
@@ -212,10 +269,26 @@ async function createClientSecret(apiKey) {
       Origin: paybitoOrigin()
     }
   });
-  const secretHash = nestedValue(payload, ["secretHash", "data.secretHash"]);
-  const clientSecret = nestedValue(payload, ["clientSecret", "data.clientSecret"]);
+  const secretHash = nestedValue(payload, [
+    "secretHash",
+    "secret_hash",
+    "data.secretHash",
+    "data.secret_hash"
+  ]) || findValueByKeys(payload, new Set(["secrethash"]));
+  const clientSecret = nestedValue(payload, [
+    "clientSecret",
+    "client_secret",
+    "clientSecretKey",
+    "client_secret_key",
+    "csk",
+    "data.clientSecret",
+    "data.client_secret",
+    "data.clientSecretKey",
+    "data.client_secret_key",
+    "data.csk"
+  ]) || findValueByKeys(payload, new Set(["clientsecret", "clientsecretkey", "csk"]));
   if (!secretHash && !clientSecret) {
-    throw new Error("PayBito validation succeeded, but no client secret was returned.");
+    throw new Error(`PayBito validation succeeded, but no client secret was returned. Validation response ${responseShape(payload)}.`);
   }
   return {
     secretHash,
@@ -231,7 +304,7 @@ function cartApiHeaders(apiKey, clientSecret) {
     "X-MBX-PUBLIC-KEY": apiKey,
     "X-MBX-APIKEY": apiKey,
     ...(apiSecret ? { "X-MBX-SECRETKEY": apiSecret } : {}),
-    "CLIENT-SECRET-KEY": clientSecret.secretHash || clientSecret.clientSecret,
+    "CLIENT-SECRET-KEY": clientSecret.clientSecret || clientSecret.secretHash,
     Origin: paybitoOrigin()
   };
 }
