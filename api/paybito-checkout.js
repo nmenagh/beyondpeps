@@ -54,8 +54,9 @@ function nestedValue(payload = {}, keys = []) {
   return "";
 }
 
-function maybeBase64Json(value = {}) {
-  return Buffer.from(JSON.stringify(value)).toString("base64url");
+function encodedCheckoutPayload(value = {}) {
+  const encoding = String(env("PAYBITO_CHECKOUT_DATA_ENCODING", "base64")).trim().toLowerCase();
+  return Buffer.from(JSON.stringify(value)).toString(encoding === "base64url" ? "base64url" : "base64");
 }
 
 function checkoutBaseUrl() {
@@ -63,7 +64,7 @@ function checkoutBaseUrl() {
 }
 
 function checkoutUrlForPcn({ paymentId, merchantId, brokerId }) {
-  const data = maybeBase64Json({
+  const data = encodedCheckoutPayload({
     paymentId,
     merchantId: String(merchantId),
     brokerId
@@ -162,7 +163,30 @@ function paybitoPayload({ order = {}, customer = {}, items = [], shippingRate = 
   };
 }
 
-async function paybitoFetch(pathOrUrl, { method = "GET", headers = {}, body } = {}) {
+function paybitoErrorDetail(payload = {}) {
+  const values = [
+    payload.message,
+    payload.error_msg,
+    payload.errorMessage,
+    payload.detail,
+    payload.error
+  ].filter((value) => value !== undefined && value !== null && String(value).trim() !== "");
+  return values.length ? values.map(String).join(" ") : JSON.stringify(payload);
+}
+
+function ensurePaybitoSuccess(payload = {}, step = "request") {
+  const error = nestedValue(payload, ["error", "data.error"]);
+  const status = nestedValue(payload, ["status", "data.status"]);
+  const success = nestedValue(payload, ["success", "data.success"]);
+  const hasError = error !== "" && !["0", "false", "null"].includes(String(error).trim().toLowerCase());
+  const explicitlyFailed = status !== "" && ["false", "failed", "failure", "error"].includes(String(status).trim().toLowerCase());
+  const successFalse = success !== "" && ["false", "0"].includes(String(success).trim().toLowerCase());
+  if (hasError || explicitlyFailed || successFalse) {
+    throw new Error(`PayBito ${step} failed. ${paybitoErrorDetail(payload)}`);
+  }
+}
+
+async function paybitoFetch(pathOrUrl, { method = "GET", headers = {}, body, step = "request" } = {}) {
   const url = /^https?:\/\//i.test(pathOrUrl) ? pathOrUrl : `${paybitoBaseUrl()}${pathOrUrl}`;
   const paybitoResponse = await fetch(url, {
     method,
@@ -171,16 +195,20 @@ async function paybitoFetch(pathOrUrl, { method = "GET", headers = {}, body } = 
   });
   const responsePayload = await responseJson(paybitoResponse);
   if (!paybitoResponse.ok) {
-    const detail = responsePayload.message || responsePayload.error || responsePayload.detail || JSON.stringify(responsePayload);
-    throw new Error(`PayBito rejected checkout (${paybitoResponse.status}). ${detail || "Check API key, secret key, origin/domain whitelist, and live/test environment."}`);
+    const detail = paybitoErrorDetail(responsePayload);
+    throw new Error(`PayBito ${step} rejected checkout (${paybitoResponse.status}). ${detail || "Check API key, secret key, origin/domain whitelist, and live/test environment."}`);
   }
+  ensurePaybitoSuccess(responsePayload, step);
   return responsePayload;
 }
 
 async function createClientSecret(apiKey) {
   const payload = await paybitoFetch("/TestPayments-Apikey-V2/api/v1/validate", {
+    step: "client-secret validation",
     headers: {
       publicKey: apiKey,
+      "X-MBX-APIKEY": apiKey,
+      ...(env("PAYBITO_API_SECRET") ? { "X-MBX-SECRETKEY": env("PAYBITO_API_SECRET") } : {}),
       Origin: paybitoOrigin()
     }
   });
@@ -197,9 +225,12 @@ async function createClientSecret(apiKey) {
 }
 
 function cartApiHeaders(apiKey, clientSecret) {
+  const apiSecret = env("PAYBITO_API_SECRET");
   return {
     "Content-Type": "application/json",
     "X-MBX-PUBLIC-KEY": apiKey,
+    "X-MBX-APIKEY": apiKey,
+    ...(apiSecret ? { "X-MBX-SECRETKEY": apiSecret } : {}),
     "CLIENT-SECRET-KEY": clientSecret.secretHash || clientSecret.clientSecret,
     Origin: paybitoOrigin()
   };
@@ -295,6 +326,7 @@ async function registerCart(body, apiKey, clientSecret) {
   const catalogId = Number(env("PAYBITO_CATALOG_ID", "0")) || 0;
   const payload = await paybitoFetch("/TestPayments-Apikey-V2/shopping/products/register", {
     method: "POST",
+    step: "cart registration",
     headers: cartApiHeaders(apiKey, clientSecret),
     body: {
       merchantId,
@@ -318,12 +350,20 @@ async function initiateCheckout(body, apiKey, clientSecret, cart) {
   const order = body.order || {};
   const payload = await paybitoFetch("/TestPayments-Apikey-V2/shopping/payment/create", {
     method: "POST",
+    step: "checkout creation",
     headers: cartApiHeaders(apiKey, clientSecret),
     body: {
       merchantId,
       cartToken: cart.cartToken,
       paymentName: `Beyond Peps order ${order.orderNumber || order.orderId}`,
-      catalogId: cart.catalogId
+      paymentType: "CHECKOUT",
+      catalogId: cart.catalogId,
+      shippingProfileId: Number(env("PAYBITO_SHIPPING_PROFILE_ID", "0")) || 0,
+      buyerProfileId: Number(env("PAYBITO_BUYER_PROFILE_ID", "0")) || 0,
+      billingId: Number(env("PAYBITO_BILLING_ID", "0")) || 0,
+      discountProfileId: Number(env("PAYBITO_DISCOUNT_PROFILE_ID", "0")) || 0,
+      isProcessingFeeApplied: Number(env("PAYBITO_PROCESSING_FEE_APPLIED", "0")) || 0,
+      redirectId: Number(env("PAYBITO_REDIRECT_ID", "0")) || 0
     }
   });
   return payload;
@@ -331,6 +371,7 @@ async function initiateCheckout(body, apiKey, clientSecret, cart) {
 
 async function createCartPayment(body) {
   const apiKey = required(env("PAYBITO_API_KEY"), "PAYBITO_API_KEY");
+  required(env("PAYBITO_API_SECRET"), "PAYBITO_API_SECRET");
   required(env("PAYBITO_MERCHANT_ID"), "PAYBITO_MERCHANT_ID");
   const clientSecret = await createClientSecret(apiKey);
   const cart = await registerCart(body, apiKey, clientSecret);

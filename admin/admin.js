@@ -781,7 +781,7 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
 
     const envNote = document.createElement("p");
     envNote.className = "admin-note";
-    envNote.textContent = "Required Vercel env vars: PAYBITO_CREATE_PAYMENT_URL and PAYBITO_API_KEY. Optional: PAYBITO_API_SECRET and PAYBITO_WEBHOOK_SECRET.";
+    envNote.textContent = "Required Vercel env vars: PAYBITO_API_KEY, PAYBITO_API_SECRET, PAYBITO_MERCHANT_ID, SUPABASE_SERVICE_ROLE_KEY, and SITE_URL. Optional: PAYBITO_ORIGIN, PAYBITO_WEBHOOK_SECRET, PAYBITO_CATALOG_ID, PAYBITO_BROKER_ID, and PayBito profile IDs.";
 
     panel.append(heading, enabled, displayName, checkoutNote, envNote);
     return panel;
