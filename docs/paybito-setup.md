@@ -23,7 +23,7 @@ PayBito is integrated as a hosted checkout provider. The browser never receives 
 
 - `PAYBITO_WEBHOOK_SECRET`: shared secret for webhook protection.
 - `PAYBITO_BROKER_ID`: fallback broker ID if PayBito does not return one from checkout creation.
-- `PAYBITO_BASE_URL`: defaults to `https://trade.paybito.com`.
+- `PAYBITO_BASE_URL`: defaults to `https://service.hashcashconsultants.com`. Use this unless PayBito support gives a different API host. `https://portal.paybito.com` is the customer checkout host, not the server API host.
 - `PAYBITO_ORIGIN`: defaults to `SITE_URL`; use the exact origin PayBito expects for the domain whitelist. The API docs show an origin with scheme, for example `https://beyondpeps.com`, even if the portal whitelist field stores the domain without `https://`.
 - `PAYBITO_CATALOG_ID`: defaults to `0`.
 - `PAYBITO_CHECKOUT_BASE_URL`: defaults to `https://portal.paybito.com/payments/merchant/checkout/`.
@@ -77,4 +77,5 @@ If PayBito returns `401 Unauthorized`, check:
 - `PAYBITO_MERCHANT_ID` is the merchant tied to the API key.
 - The Beyond Peps domain is whitelisted in PayBito if required.
 - `PAYBITO_ORIGIN` exactly matches the whitelisted domain format PayBito expects.
+- `PAYBITO_BASE_URL` is the API host. If the checkout reports HTML/non-JSON from validation, the request is reaching a website/portal page instead of the API.
 - If PayBito requires IP whitelisting for private endpoints, Vercel Serverless Functions do not provide a fixed outbound IP by default. That requires a PayBito setting that whitelists by domain/origin for this cart flow, a Vercel fixed egress/networking option, or a small backend/proxy with a static outbound IP.

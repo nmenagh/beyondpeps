@@ -22,7 +22,10 @@ async function responseJson(response) {
   try {
     return JSON.parse(text);
   } catch {
-    return { message: text };
+    return {
+      __nonJson: true,
+      message: text
+    };
   }
 }
 
@@ -38,7 +41,7 @@ function absoluteUrl(path = "") {
 }
 
 function paybitoBaseUrl() {
-  return env("PAYBITO_BASE_URL", "https://trade.paybito.com").replace(/\/$/, "");
+  return env("PAYBITO_BASE_URL", "https://service.hashcashconsultants.com").replace(/\/$/, "");
 }
 
 function paybitoOrigin() {
@@ -251,6 +254,9 @@ async function paybitoFetch(pathOrUrl, { method = "GET", headers = {}, body, ste
     body: body ? JSON.stringify(body) : undefined
   });
   const responsePayload = await responseJson(paybitoResponse);
+  if (responsePayload.__nonJson) {
+    throw new Error(`PayBito ${step} returned HTML/non-JSON instead of API JSON. Check PAYBITO_BASE_URL and endpoint path. Current API base: ${paybitoBaseUrl()}.`);
+  }
   if (!paybitoResponse.ok) {
     const detail = paybitoErrorDetail(responsePayload);
     throw new Error(`PayBito ${step} rejected checkout (${paybitoResponse.status}). ${detail || "Check API key, secret key, origin/domain whitelist, and live/test environment."}`);
