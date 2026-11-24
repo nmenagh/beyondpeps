@@ -96,24 +96,29 @@ async function contactForEmail(email, fullName = "") {
 }
 
 function emailWrapper({ bodyHtml, headerImageUrl, previewText, unsubscribeUrl }) {
-  const image = absoluteUrl(headerImageUrl || "/assets/bp-logo-mark.png");
+  // The plain teal mark disappears on the dark email card, so the default logo uses the teal badge.
+  const isDefaultMark = !headerImageUrl || /\/bp-logo-mark\.png$/.test(headerImageUrl);
+  const image = absoluteUrl(isDefaultMark ? "/assets/bp-logo-badge.png" : headerImageUrl);
+  const imageStyle = isDefaultMark
+    ? "display:block;width:88px;height:88px"
+    : "display:block;max-width:360px;max-height:220px;width:auto;height:auto";
   const preferenceFooter = unsubscribeUrl
-    ? `<p style="margin:0 0 6px"><a href="${escapeHtml(unsubscribeUrl)}" style="color:#398e88">Unsubscribe from marketing emails</a></p>`
+    ? `<p style="margin:0 0 6px"><a href="${escapeHtml(unsubscribeUrl)}" style="color:#65ffc8">Unsubscribe from marketing emails</a></p>`
     : "";
 
   return `<!doctype html>
   <html>
     <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Beyond Peps</title></head>
-    <body style="margin:0;background:#07161c;color:#eaf7f8;font-family:Arial,sans-serif">
+    <body style="margin:0;background:#05090d;color:#ffffff;font-family:Inter,Arial,Helvetica,sans-serif">
       <div style="display:none;max-height:0;overflow:hidden">${escapeHtml(previewText || "")}</div>
-      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#07161c">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#05090d">
         <tr><td align="center" style="padding:28px 14px">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;background:#10252d;border:1px solid #315966;border-radius:8px">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;background:#09151e;border:1px solid #3b535d;border-radius:8px">
             <tr><td align="center" style="padding:26px 28px 10px">
-              ${image ? `<img src="${escapeHtml(image)}" alt="Beyond Peps" style="display:block;max-width:360px;max-height:220px;width:auto;height:auto">` : ""}
+              ${image ? `<img src="${escapeHtml(image)}" alt="Beyond Peps"${isDefaultMark ? " width=\"88\" height=\"88\"" : ""} style="${imageStyle}">` : ""}
             </td></tr>
-            <tr><td style="padding:22px 32px 32px;color:#eaf7f8;font-size:16px;line-height:1.6">${bodyHtml}</td></tr>
-            <tr><td style="padding:20px 32px;border-top:1px solid #315966;color:#9eb6bd;font-size:12px;line-height:1.5">
+            <tr><td style="padding:22px 32px 32px;color:#c9e4ec;font-size:16px;line-height:1.6">${bodyHtml}</td></tr>
+            <tr><td style="padding:20px 32px;border-top:1px solid #3b535d;color:#86a9b5;font-size:12px;line-height:1.5">
               ${preferenceFooter}
               <p style="margin:0">Unsubscribing affects marketing messages only. Order confirmations, shipping notices, and account-required emails will continue.</p>
             </td></tr>

@@ -6,7 +6,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
     "announcement": "Educational resources and research supply essentials for careful lab workflows.",
     "heroEyebrow": "Research supply lab",
     "heroTitle": "Research supplies, reference tools, and measured routines.",
-    "heroBody": "Beyond Peps brings research supplies, clear reference material, calculators, and practical tools into one premium dark-glass workspace.",
+    "heroBody": "Research supplies, clear reference material, and practical calculators in one place, built for careful, repeatable work.",
     "blogHeroImageUrl": "/assets/hero-liquid-lab.png",
     "primaryCta": "Shop research supplies",
     "secondaryCta": "Explore references",
@@ -15,25 +15,25 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
     "homeValueTwoLabel": "Readable",
     "homeValueTwoTitle": "Reference material written for careful users, not hype cycles.",
     "homeValueThreeLabel": "Expandable",
-    "homeValueThreeTitle": "Built to grow into payments, accounts, and managed inventory.",
+    "homeValueThreeTitle": "A catalog and reference library that keep growing with your research.",
     "homeFeaturedEyebrow": "Research catalog",
     "homeFeaturedTitle": "Featured products",
     "homeFeaturedBody": "A focused look at the three research supplies currently featured by Beyond Peps.",
     "homeReferencesEyebrow": "Reference library",
     "homeReferencesTitle": "Clear educational material beside the products.",
-    "homeReferencesBody": "References are editable in the admin panel and designed to support calculators, product education, and blog posts.",
+    "homeReferencesBody": "Short guides on units, storage, labels, and workflow basics, written to sit beside the calculators and products.",
     "homeCalculatorsEyebrow": "Calculators",
     "homeCalculatorsTitle": "Research math tools with a cleaner interface.",
-    "homeCalculatorsBody": "The calculator page now includes a peptide unit planner and a GLP half-life estimator styled for the Beyond Peps research workflow.",
+    "homeCalculatorsBody": "A peptide unit planner and a GLP half-life estimator for educational research planning. Not medical advice.",
     "homeBlogEyebrow": "Journal",
-    "homeBlogTitle": "Blog drafts",
-    "homeBlogBody": "Use the admin panel to develop posts before publishing them into the storefront.",
+    "homeBlogTitle": "Blog",
+    "homeBlogBody": "Educational articles and updates from the Beyond Peps team.",
     "disclaimer": "Content is educational only and is not medical advice. Products are intended for lawful use only. Consult a qualified professional before making health decisions.",
     "pages": {
       "shop": {
         "eyebrow": "Research catalog",
         "title": "Shop the launch collection.",
-        "body": "Products are staged for review while payment and fulfillment options are connected. The admin panel controls this catalog."
+        "body": "Research supplies for careful lab workflows. All products are for research use only."
       },
       "references": {
         "eyebrow": "Reference library",
@@ -48,7 +48,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "blog": {
         "eyebrow": "Journal",
         "title": "Notes for cleaner supply workflows.",
-        "body": "Drafts and published posts are managed from the admin panel. This page is ready to become the editorial side of Beyond Peps."
+        "body": "Educational articles and updates from the Beyond Peps team."
       },
       "cart": {
         "eyebrow": "Cart",
@@ -121,7 +121,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "stockLevel": 77,
       "status": "Active",
       "summary": "The Deluxe Pen Set Includes:",
-      "description": "The Deluxe Pen Set Includes:\n\n5- Disposable Pen Tips\n5- Alcohol Pad Wipe Sets\n2- Reconstitution Syringes\n1- 3mL cartridge\n1- V2 Pen\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
+      "description": "The Deluxe Pen Set Includes:\n\n5- Disposable Pen Tips\n5- Alcohol Pad Wipe Sets\n2- Reconstitution Syringes\n1- 3mL cartridge\n1- V2 Pen\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Beyond Peps makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
       "imageUrl": "/assets/products/1-2.avif",
       "tags": [
         "pens"
@@ -139,7 +139,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "stockLevel": 19,
       "status": "Active",
       "summary": "30 Pack of V2 Pen Tips",
-      "description": "30 Pack of V2 Pen Tips\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
+      "description": "30 Pack of V2 Pen Tips\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Beyond Peps makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
       "imageUrl": "/assets/products/2-2.avif",
       "tags": [
         "pens"
@@ -157,7 +157,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "stockLevel": 16,
       "status": "Active",
       "summary": "The Pen Starter Set Includes:",
-      "description": "The Pen Starter Set Includes:\n\n5- Disposable Pen Tips\n5- Alcohol Pad Wipe Sets\n2- Reconstitution Syringes\n1- 3mL cartridge\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
+      "description": "The Pen Starter Set Includes:\n\n5- Disposable Pen Tips\n5- Alcohol Pad Wipe Sets\n2- Reconstitution Syringes\n1- 3mL cartridge\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Beyond Peps makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
       "imageUrl": "/assets/products/3-1.avif",
       "tags": [
         "pens"
@@ -193,7 +193,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "stockLevel": 21,
       "status": "Active",
       "summary": "Bag of 10 – Easy Touch 31ga x 5/16″(8mm) x .5ml Syringes",
-      "description": "Bag of 10 – Easy Touch 31ga x 5/16″(8mm) x .5ml Syringes\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
+      "description": "Bag of 10 – Easy Touch 31ga x 5/16″(8mm) x .5ml Syringes\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Beyond Peps makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
       "imageUrl": "/assets/products/Deluxe-Pen-Set.png",
       "tags": [
         "syringes"
@@ -205,13 +205,13 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
     },
     {
       "id": "Reconstituting-Syringes-10-Pack",
-      "name": "Reconstituting Syringes10-Pack",
+      "name": "Reconstituting Syringes 10-Pack",
       "category": "Syringes",
       "price": 10,
       "stockLevel": 31,
       "status": "Active",
       "summary": "10-Pack of 3ml reconstituting Syringes",
-      "description": "10-Pack of 3ml reconstituting Syringes\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
+      "description": "10-Pack of 3ml reconstituting Syringes\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Beyond Peps makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
       "imageUrl": "/assets/products/ChatGPT-Image-May-20-2026-10_48_56-PM.png",
       "tags": [
         "syringes"
@@ -229,7 +229,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "stockLevel": 22,
       "status": "Active",
       "summary": "The Syringe Starter Set Includes:",
-      "description": "The Syringe Starter Set Includes:\n\n4- Easy Touch Syringes\n5- Alcohol Pad Wipe Sets\n2- Reconstitution Syringes\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
+      "description": "The Syringe Starter Set Includes:\n\n4- Easy Touch Syringes\n5- Alcohol Pad Wipe Sets\n2- Reconstitution Syringes\n\n\n\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Beyond Peps makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
       "imageUrl": "/assets/products/Pen-Starter-Set.png",
       "tags": [
         "syringes"
@@ -246,8 +246,8 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "price": 25,
       "stockLevel": 81,
       "status": "Active",
-      "summary": "The V2 injection pen is a reusable, metal,, 3mL, pen-style injector designed for precise, daily administration of 1-60 units of research peptides or compound...",
-      "description": "The V2 injection pen is a reusable, metal,, 3mL, pen-style injector designed for precise, daily administration of 1-60 units of research peptides or compounds. It features an adjustable dosage dial, a durable metal body, and compatibility with standard ISO 11608-3 cartridges. It is commonly used as a cost-effective alternative to disposable syringes, boasting over 200 uses.\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
+      "summary": "Reusable 3 mL metal pen-style injector with an adjustable 1 to 60 unit dial and ISO 11608-3 cartridge compatibility.",
+      "description": "The V-2 Pen is a reusable 3 mL pen-style injector with a durable metal body and an adjustable dial that measures 1 to 60 units. It accepts standard ISO 11608-3 cartridges and is rated for more than 200 uses, which makes it a cost-effective alternative to disposable syringes in research workflows.\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Beyond Peps makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
       "imageUrl": "/assets/products/3-1.avif",
       "tags": [
         "pens"
@@ -283,7 +283,7 @@ window.BEYOND_PEPS_DEFAULT_CONTENT = {
       "stockLevel": 19,
       "status": "Active",
       "summary": "BP-H Bacteriostatic Water for Injection, USP – 30 mL",
-      "description": "BP-H Bacteriostatic Water for Injection, USP – 30 mL\n\nSterile, non-pyrogenic bacteriostatic water supplied in a 30 mL multiple-dose vial with 0.9% benzyl alcohol as a preservative. Ideal for reconstituting lyophilized research compounds in laboratory settings. Compatible with luer-lock and standard stoppers. Store at controlled room temperature; do not freeze.\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Trivial Bioworks makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
+      "description": "BP-H Bacteriostatic Water for Injection, USP – 30 mL\n\nSterile, non-pyrogenic bacteriostatic water supplied in a 30 mL multiple-dose vial with 0.9% benzyl alcohol as a preservative. Ideal for reconstituting lyophilized research compounds in laboratory settings. Compatible with luer-lock and standard stoppers. Store at controlled room temperature; do not freeze.\n\nThis preparation is intended exclusively for laboratory research use in controlled scientific environments. It has not been evaluated or approved by the Food and Drug Administration and is not intended for human or veterinary use, nor for incorporation into any food, supplement, cosmetic, or medicinal product. Beyond Peps makes no therapeutic claims regarding this material. By purchasing this product, the buyer confirms their qualifications as a research professional or accredited institution and accepts responsibility for proper handling, storage, and regulatory compliance. All transactions are considered final upon completion.",
       "imageUrl": "/assets/products/3-1.avif",
       "tags": [
         "syringes"

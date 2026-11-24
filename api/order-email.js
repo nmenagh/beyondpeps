@@ -31,7 +31,7 @@ function zelleDetails(settings = {}, order = {}) {
       ${zelle.paymentLink ? `<li><strong>Payment link:</strong> <a href="${escapeHtml(zelle.paymentLink)}">Open Zelle payment link</a></li>` : ""}
       <li><strong>Memo:</strong> ${escapeHtml(order.paymentReference || order.orderNumber || "")}</li>
     </ul>
-    ${zelle.qrCodeImageUrl ? `<p><img src="${escapeHtml(zelle.qrCodeImageUrl)}" alt="Zelle QR code" width="220" style="display:block;max-width:220px;border:1px solid #d8e7ea;border-radius:12px;padding:8px"></p>` : ""}
+    ${zelle.qrCodeImageUrl ? `<p><img src="${escapeHtml(zelle.qrCodeImageUrl)}" alt="Zelle QR code" width="220" style="display:block;max-width:220px;border:1px solid #3b535d;border-radius:12px;padding:8px"></p>` : ""}
     <p>${escapeHtml(zelle.memoInstructions || "Include your order number in the Zelle memo.")}</p>
   `;
 }
@@ -84,8 +84,8 @@ function itemsTable(items = []) {
       <tbody>
         ${items.map((item) => `
           <tr>
-            <td style="padding:8px 0;border-bottom:1px solid #d8e7ea">${escapeHtml(item.name || item.id)} x ${escapeHtml(item.quantity || 1)}</td>
-            <td align="right" style="padding:8px 0;border-bottom:1px solid #d8e7ea">${money(Math.round(Number(item.price || 0) * 100) * Number(item.quantity || 1))}</td>
+            <td style="padding:8px 0;border-bottom:1px solid #3b535d">${escapeHtml(item.name || item.id)} x ${escapeHtml(item.quantity || 1)}</td>
+            <td align="right" style="padding:8px 0;border-bottom:1px solid #3b535d">${money(Math.round(Number(item.price || 0) * 100) * Number(item.quantity || 1))}</td>
           </tr>
         `).join("")}
       </tbody>
