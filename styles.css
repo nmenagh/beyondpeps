@@ -12,6 +12,9 @@
   --mint: #65ffc8;
   --blue: #4d8dff;
   --ink: #071014;
+  /* Logo teal: reserved for the BP mark and its lockups, never for UI accents (brand kit §3). */
+  --bp-teal: #168996;
+  --bp-teal-deep: #0a7480;
   --radius: 8px;
   --shadow: 0 26px 80px rgba(0, 0, 0, 0.5);
 }
@@ -150,8 +153,8 @@ img {
 }
 
 .brand-mark img {
-  width: 118%;
-  height: 118%;
+  width: 80%;
+  height: 80%;
   object-fit: contain;
 }
 
@@ -2089,7 +2092,7 @@ legend {
   padding: 0.35rem 1rem 0.35rem 0.42rem;
   border-radius: 999px;
   background: #ffffff;
-  color: #0a7480;
+  color: var(--bp-teal-deep);
   font-weight: 900;
   letter-spacing: -0.01em;
   text-decoration: none;
@@ -2103,12 +2106,12 @@ legend {
   place-items: center;
   overflow: hidden;
   border-radius: 50%;
-  background: #168996;
+  background: var(--bp-teal);
 }
 
 .footer-logo-mark img {
-  width: 118%;
-  height: 118%;
+  width: 72%;
+  height: 72%;
   object-fit: contain;
 }
 

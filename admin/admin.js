@@ -1799,7 +1799,7 @@ function previewEmailTemplate(template = {}) {
     subtotal: "$75.00",
     shipping: "$8.95",
     total: "$83.95",
-    order_items: "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td style=\"padding:8px 0;border-bottom:1px solid #d8e7ea\">Research supply x 1</td><td align=\"right\" style=\"padding:8px 0;border-bottom:1px solid #d8e7ea\">$75.00</td></tr></table>",
+    order_items: "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td style=\"padding:8px 0;border-bottom:1px solid #3b535d\">Research supply x 1</td><td align=\"right\" style=\"padding:8px 0;border-bottom:1px solid #3b535d\">$75.00</td></tr></table>",
     payment_details: "<h2>Payment details</h2><p>Your payment instructions or confirmation details appear here.</p>"
   };
   const htmlTokens = new Set(["order_items", "payment_details"]);
@@ -1807,18 +1807,22 @@ function previewEmailTemplate(template = {}) {
     const value = sampleTokens[key] ?? `{{${key}}}`;
     return htmlTokens.has(key) ? value : escapeAttribute(value);
   });
-  const headerImage = template.header_image_url
-    ? new URL(resolveAdminImageUrl(template.header_image_url), window.location.href).href
-    : new URL("../assets/bp-logo-mark.png", window.location.href).href;
+  const isDefaultMark = !template.header_image_url || /\/bp-logo-mark\.png$/.test(template.header_image_url);
+  const headerImage = isDefaultMark
+    ? new URL("../assets/bp-logo-badge.png", window.location.href).href
+    : new URL(resolveAdminImageUrl(template.header_image_url), window.location.href).href;
+  const headerImageStyle = isDefaultMark
+    ? "display:block;width:88px;height:88px"
+    : "display:block;max-width:360px;max-height:220px;width:auto;height:auto";
   const previewHtml = `<!doctype html>
     <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
-    <body style="margin:0;background:#07161c;color:#eaf7f8;font-family:Arial,sans-serif">
+    <body style="margin:0;background:#05090d;color:#ffffff;font-family:Inter,Arial,Helvetica,sans-serif">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center" style="padding:28px 14px">
-        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;background:#10252d;border:1px solid #315966;border-radius:8px">
-          <tr><td align="center" style="padding:26px 28px 10px"><img src="${escapeAttribute(headerImage)}" alt="Beyond Peps" style="display:block;max-width:360px;max-height:220px;width:auto;height:auto"></td></tr>
-          <tr><td style="padding:22px 32px 32px;color:#eaf7f8;font-size:16px;line-height:1.6">${replace(template.body_html || "")}</td></tr>
-          <tr><td style="padding:20px 32px;border-top:1px solid #315966;color:#9eb6bd;font-size:12px;line-height:1.5">
-            <p style="margin:0 0 6px"><a href="#" style="color:#398e88">Unsubscribe from marketing emails</a></p>
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;background:#09151e;border:1px solid #3b535d;border-radius:8px">
+          <tr><td align="center" style="padding:26px 28px 10px"><img src="${escapeAttribute(headerImage)}" alt="Beyond Peps" style="${headerImageStyle}"></td></tr>
+          <tr><td style="padding:22px 32px 32px;color:#c9e4ec;font-size:16px;line-height:1.6">${replace(template.body_html || "")}</td></tr>
+          <tr><td style="padding:20px 32px;border-top:1px solid #3b535d;color:#86a9b5;font-size:12px;line-height:1.5">
+            <p style="margin:0 0 6px"><a href="#" style="color:#65ffc8">Unsubscribe from marketing emails</a></p>
             <p style="margin:0">Unsubscribing affects marketing messages only. Order confirmations, shipping notices, and account-required emails will continue.</p>
           </td></tr>
         </table>

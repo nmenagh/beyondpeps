@@ -56,7 +56,7 @@ module.exports = async function handler(request, response) {
         subtotal: "$75.00",
         shipping: "$8.95",
         total: "$83.95",
-        order_items: "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td style=\"padding:8px 0;border-bottom:1px solid #d8e7ea\">Research supply x 1</td><td align=\"right\" style=\"padding:8px 0;border-bottom:1px solid #d8e7ea\">$75.00</td></tr></table>",
+        order_items: "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\"><tr><td style=\"padding:8px 0;border-bottom:1px solid #3b535d\">Research supply x 1</td><td align=\"right\" style=\"padding:8px 0;border-bottom:1px solid #3b535d\">$75.00</td></tr></table>",
         payment_details: "<h2>Payment details</h2><p>Your payment instructions or confirmation details appear here.</p>"
       },
       htmlTokenNames: ["order_items", "payment_details"],

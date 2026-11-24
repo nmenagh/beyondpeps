@@ -96,8 +96,8 @@ function orderItemsHtml(items = []) {
       <tbody>
         ${items.map((item) => `
           <tr>
-            <td style="padding:8px 0;border-bottom:1px solid #d8e7ea">${escapeHtml(item.product_name || item.product_title || item.product_slug || "Item")} x ${escapeHtml(item.quantity || 1)}</td>
-            <td align="right" style="padding:8px 0;border-bottom:1px solid #d8e7ea">${money(item.total_cents || 0)}</td>
+            <td style="padding:8px 0;border-bottom:1px solid #3b535d">${escapeHtml(item.product_name || item.product_title || item.product_slug || "Item")} x ${escapeHtml(item.quantity || 1)}</td>
+            <td align="right" style="padding:8px 0;border-bottom:1px solid #3b535d">${money(item.total_cents || 0)}</td>
           </tr>
         `).join("")}
       </tbody>
