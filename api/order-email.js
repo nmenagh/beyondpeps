@@ -36,6 +36,25 @@ function zelleDetails(settings = {}, order = {}) {
   `;
 }
 
+function cashAppDetails(settings = {}, order = {}) {
+  const cashapp = settings.cashapp || {};
+  const tag = String(cashapp.cashtag || "").trim().replace(/^\$+/, "");
+  const cashtag = tag ? `$${tag}` : "";
+  const paymentLink = cashapp.paymentLink || (cashtag ? `https://cash.app/${cashtag}` : "");
+  return `
+    <h2>Cash App payment details</h2>
+    <p>${escapeHtml(cashapp.confirmationIntro || "Send your Cash App payment using the details below.")}</p>
+    <ul>
+      ${cashapp.recipientName ? `<li><strong>Name:</strong> ${escapeHtml(cashapp.recipientName)}</li>` : ""}
+      ${cashtag ? `<li><strong>$Cashtag:</strong> ${escapeHtml(cashtag)}</li>` : ""}
+      ${paymentLink ? `<li><strong>Payment link:</strong> <a href="${escapeHtml(paymentLink)}">Open Cash App payment link</a></li>` : ""}
+      <li><strong>Note:</strong> ${escapeHtml(order.paymentReference || order.orderNumber || "")}</li>
+    </ul>
+    ${cashapp.qrCodeImageUrl ? `<p><img src="${escapeHtml(cashapp.qrCodeImageUrl)}" alt="Cash App QR code" width="220" style="display:block;max-width:220px;border:1px solid #d8e7ea;border-radius:12px;padding:8px"></p>` : ""}
+    <p>${escapeHtml(cashapp.memoInstructions || "Include your order number in the Cash App note.")}</p>
+  `;
+}
+
 function paymentMethod(body = {}) {
   const order = body.order || {};
   return String(
@@ -51,7 +70,7 @@ function paymentMethod(body = {}) {
 
 function paymentLabel(method = "") {
   if (method === "zelle") return "Zelle";
-  if (method === "paybito") return "PayBito";
+  if (method === "cashapp") return "Cash App";
   if (method === "card" || method === "stripe") return "Card";
   if (method === "paypal") return "PayPal";
   if (method === "crypto") return "Crypto";
@@ -62,6 +81,7 @@ function paymentDetails(body = {}) {
   const order = body.order || {};
   const method = paymentMethod(body);
   if (method === "zelle") return zelleDetails(body.paymentSettings, order);
+  if (method === "cashapp") return cashAppDetails(body.paymentSettings, order);
 
   const status = String(order.paymentStatus || order.payment_status || order.status || "").replace(/[_-]+/g, " ");
   const label = paymentLabel(method);

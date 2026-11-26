@@ -383,7 +383,7 @@ function normalizeShippingMethods(value = {}) {
 
 function normalizePaymentMethods(value = {}) {
   const zelle = value.zelle || {};
-  const paybito = value.paybito || {};
+  const cashapp = value.cashapp || {};
   return {
     zelle: {
       enabled: zelle.enabled !== false,
@@ -396,10 +396,15 @@ function normalizePaymentMethods(value = {}) {
       memoInstructions: zelle.memoInstructions || "Include your order number in the Zelle memo.",
       confirmationIntro: zelle.confirmationIntro || "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
     },
-    paybito: {
-      enabled: Boolean(paybito.enabled),
-      displayName: paybito.displayName || "PayBito",
-      checkoutNote: paybito.checkoutNote || "Pay securely through PayBito. You will be redirected to complete payment."
+    cashapp: {
+      enabled: Boolean(cashapp.enabled),
+      displayName: cashapp.displayName || "Cash App",
+      recipientName: cashapp.recipientName || "",
+      cashtag: cashapp.cashtag || "",
+      paymentLink: cashapp.paymentLink || "",
+      qrCodeImageUrl: cashapp.qrCodeImageUrl || "",
+      memoInstructions: cashapp.memoInstructions || "Include your order number in the Cash App note.",
+      confirmationIntro: cashapp.confirmationIntro || "Your order is reserved. Send payment with Cash App using the details below, then keep your order number for reference."
     }
   };
 }
@@ -423,6 +428,7 @@ function mediaAssetsFromContent(data) {
   });
   if (data.site?.blogHeroImageUrl) urls.add(data.site.blogHeroImageUrl);
   if (data.site?.paymentMethods?.zelle?.qrCodeImageUrl) urls.add(data.site.paymentMethods.zelle.qrCodeImageUrl);
+  if (data.site?.paymentMethods?.cashapp?.qrCodeImageUrl) urls.add(data.site.paymentMethods.cashapp.qrCodeImageUrl);
   (data.posts || []).forEach((post) => {
     if (post.imageUrl) urls.add(post.imageUrl);
     if (post.heroImageUrl) urls.add(post.heroImageUrl);
@@ -751,39 +757,60 @@ function field(label, value, onInput, type = "text", wide = false, uploadFolder 
     return panel;
   }
 
-  if (type === "paybito_payment_settings") {
-    const settings = normalizePaymentMethods({ paybito: value });
-    const paybito = settings.paybito;
+  if (type === "cashapp_payment_settings") {
+    const settings = normalizePaymentMethods({ cashapp: value });
     const panel = document.createElement("div");
     panel.className = "payment-method-admin field-wide";
 
     const heading = document.createElement("div");
     heading.innerHTML = `
       <span class="admin-field-label">${escapeAttribute(label)}</span>
-      <p>PayBito API credentials are stored as Vercel environment variables. These settings only control customer-facing checkout copy.</p>
+      <p>These Cash App details are shown at checkout and used in the order confirmation email.</p>
     `;
 
-    const enabled = field("Enable PayBito checkout", paybito.enabled, (next) => {
-      paybito.enabled = next;
-      onInput(paybito);
+    const cashapp = settings.cashapp;
+    const enabled = field("Enable Cash App checkout", cashapp.enabled, (next) => {
+      cashapp.enabled = next;
+      onInput(settings.cashapp);
       return true;
     }, "checkbox");
-    const displayName = field("Payment label", paybito.displayName, (next) => {
-      paybito.displayName = next;
-      onInput(paybito);
+    const displayName = field("Payment label", cashapp.displayName, (next) => {
+      cashapp.displayName = next;
+      onInput(settings.cashapp);
       return true;
     });
-    const checkoutNote = field("Checkout note", paybito.checkoutNote, (next) => {
-      paybito.checkoutNote = next;
-      onInput(paybito);
+    const recipientName = field("Cash App recipient name", cashapp.recipientName, (next) => {
+      cashapp.recipientName = next;
+      onInput(settings.cashapp);
+      return true;
+    });
+    const cashtag = field("Cash App $cashtag", cashapp.cashtag, (next) => {
+      cashapp.cashtag = next;
+      onInput(settings.cashapp);
+      return true;
+    });
+    const paymentLink = field("Cash App payment link (optional, defaults to cash.app/$cashtag)", cashapp.paymentLink, (next) => {
+      cashapp.paymentLink = next;
+      onInput(settings.cashapp);
+      return true;
+    }, "url", true);
+    const qrCodeImageUrl = field("Cash App QR code image", cashapp.qrCodeImageUrl, (next) => {
+      cashapp.qrCodeImageUrl = next;
+      onInput(settings.cashapp);
+      return true;
+    }, "image", true, "payments");
+    const memoInstructions = field("Note instructions", cashapp.memoInstructions, (next) => {
+      cashapp.memoInstructions = next;
+      onInput(settings.cashapp);
+      return true;
+    }, "textarea", true);
+    const confirmationIntro = field("Customer confirmation message", cashapp.confirmationIntro, (next) => {
+      cashapp.confirmationIntro = next;
+      onInput(settings.cashapp);
       return true;
     }, "textarea", true);
 
-    const envNote = document.createElement("p");
-    envNote.className = "admin-note";
-    envNote.textContent = "Required Vercel env vars: PAYBITO_API_KEY, PAYBITO_API_SECRET, PAYBITO_MERCHANT_ID, SUPABASE_SERVICE_ROLE_KEY, and SITE_URL. Optional: PAYBITO_BASE_URL, PAYBITO_ORIGIN, PAYBITO_WEBHOOK_SECRET, PAYBITO_CATALOG_ID, PAYBITO_BROKER_ID, and PayBito profile IDs. The default PayBito API base is service.hashcashconsultants.com.";
-
-    panel.append(heading, enabled, displayName, checkoutNote, envNote);
+    panel.append(heading, enabled, displayName, recipientName, cashtag, paymentLink, qrCodeImageUrl, memoInstructions, confirmationIntro);
     return panel;
   }
 
@@ -1119,21 +1146,21 @@ function renderPaymentFields() {
       activePaymentSectionId = "zelle";
       renderAll();
     });
-    const paybitoTile = document.createElement("button");
-    paybitoTile.className = "page-copy-tile";
-    paybitoTile.type = "button";
-    paybitoTile.innerHTML = `
-      <span class="page-copy-index">PB</span>
+    const cashappTile = document.createElement("button");
+    cashappTile.className = "page-copy-tile";
+    cashappTile.type = "button";
+    cashappTile.innerHTML = `
+      <span class="page-copy-index">CA</span>
       <span class="page-copy-text">
-        <strong>PayBito</strong>
-        <small>Hosted checkout toggle and customer-facing payment copy.</small>
+        <strong>Cash App</strong>
+        <small>$Cashtag, payment link, QR code, note copy, and test email.</small>
       </span>
     `;
-    paybitoTile.addEventListener("click", () => {
-      activePaymentSectionId = "paybito";
+    cashappTile.addEventListener("click", () => {
+      activePaymentSectionId = "cashapp";
       renderAll();
     });
-    grid.append(paybitoTile, zelleTile);
+    grid.append(zelleTile, cashappTile);
     root.append(grid);
     return;
   }
@@ -1148,29 +1175,31 @@ function renderPaymentFields() {
   });
   root.append(back);
 
-  if (activePaymentSectionId === "paybito") {
-    root.append(field("PayBito payment settings", content.site.paymentMethods?.paybito || {}, (value) => {
+  const testMethod = activePaymentSectionId === "cashapp" ? "cashapp" : "zelle";
+  const testMethodLabel = testMethod === "cashapp" ? "Cash App" : "Zelle";
+
+  if (testMethod === "cashapp") {
+    root.append(field("Cash App payment settings", content.site.paymentMethods?.cashapp || {}, (value) => {
       content.site.paymentMethods = normalizePaymentMethods({
         ...content.site.paymentMethods,
-        paybito: value
+        cashapp: value
       });
-    }, "paybito_payment_settings"));
-    return;
+    }, "cashapp_payment_settings"));
+  } else {
+    root.append(field("Zelle payment settings", content.site.paymentMethods?.zelle || {}, (value) => {
+      content.site.paymentMethods = normalizePaymentMethods({
+        ...content.site.paymentMethods,
+        zelle: value
+      });
+    }, "zelle_payment_settings"));
   }
-
-  root.append(field("Zelle payment settings", content.site.paymentMethods?.zelle || {}, (value) => {
-    content.site.paymentMethods = normalizePaymentMethods({
-      ...content.site.paymentMethods,
-      zelle: value
-    });
-  }, "zelle_payment_settings"));
 
   const tester = document.createElement("article");
   tester.className = "payment-test-card field-wide";
   tester.innerHTML = `
     <div>
       <span class="admin-field-label">Send test email</span>
-      <p>Send a sample Zelle order confirmation using the current payment settings.</p>
+      <p>Send a sample ${testMethodLabel} order confirmation using the current payment settings.</p>
     </div>
     <label>Recipient email<input id="testEmailRecipient" type="email" value="${escapeAttribute(activeAdminEmail)}" placeholder="you@example.com"></label>
     <button class="button primary" id="sendTestEmail" type="button">Send test email</button>
@@ -1179,11 +1208,11 @@ function renderPaymentFields() {
   root.append(tester);
 
   tester.querySelector("#sendTestEmail").addEventListener("click", () => {
-    sendTestEmail(tester.querySelector("#testEmailRecipient").value.trim());
+    sendTestEmail(tester.querySelector("#testEmailRecipient").value.trim(), testMethod);
   });
 }
 
-async function sendTestEmail(recipient) {
+async function sendTestEmail(recipient, method = "zelle") {
   const status = document.querySelector("#testEmailStatus");
   const button = document.querySelector("#sendTestEmail");
   if (!recipient) {
@@ -1197,13 +1226,13 @@ async function sendTestEmail(recipient) {
 
   const order = {
     orderId: "test-order",
-    orderNumber: "TEST-ZELLE",
-    paymentReference: "BP-ZELLE-TEST",
+    orderNumber: `TEST-${method.toUpperCase()}`,
+    paymentReference: `BP-${method.toUpperCase()}-TEST`,
     subtotalCents: 1500,
     shippingCents: 500,
     totalCents: 2000,
     currency: "USD",
-    status: "awaiting_zelle_payment"
+    status: `awaiting_${method}_payment`
   };
 
   try {
@@ -1213,6 +1242,7 @@ async function sendTestEmail(recipient) {
       body: JSON.stringify({
         type: "order_confirmation",
         customer: { name: "Test Customer", email: recipient },
+        paymentMethod: method,
         order,
         items: [{ id: "test-item", name: "Beyond Peps Test Item", price: 15, quantity: 1 }],
         shippingRate: { provider: "Test Carrier", servicelevel: "Test Shipping", amount: 5 },
