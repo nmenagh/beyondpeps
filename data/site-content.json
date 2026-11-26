@@ -37,10 +37,15 @@
         "memoInstructions": "Include your order number in the Zelle memo.",
         "confirmationIntro": "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
       },
-      "paybito": {
+      "cashapp": {
         "enabled": false,
-        "displayName": "PayBito",
-        "checkoutNote": "Pay securely through PayBito. You will be redirected to complete payment."
+        "displayName": "Cash App",
+        "recipientName": "",
+        "cashtag": "",
+        "paymentLink": "",
+        "qrCodeImageUrl": "",
+        "memoInstructions": "Include your order number in the Cash App note.",
+        "confirmationIntro": "Your order is reserved. Send payment with Cash App using the details below, then keep your order number for reference."
       }
     },
     "homeFeaturedEyebrow": "Research catalog",

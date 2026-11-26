@@ -185,7 +185,7 @@
   function paymentMethodSettings() {
     const methods = readSiteContent()?.site?.paymentMethods || {};
     const zelle = methods.zelle || {};
-    const paybito = methods.paybito || {};
+    const cashapp = methods.cashapp || {};
     return {
       zelle: {
         enabled: zelle.enabled !== false,
@@ -198,12 +198,27 @@
         memoInstructions: zelle.memoInstructions || "Include your order number in the Zelle memo.",
         confirmationIntro: zelle.confirmationIntro || "Your order is reserved. Send payment with Zelle using the details below, then keep your order number for reference."
       },
-      paybito: {
-        enabled: Boolean(paybito.enabled),
-        displayName: paybito.displayName || "PayBito",
-        checkoutNote: paybito.checkoutNote || "Pay securely through PayBito. You will be redirected to complete payment."
+      cashapp: {
+        enabled: Boolean(cashapp.enabled),
+        displayName: cashapp.displayName || "Cash App",
+        recipientName: cashapp.recipientName || "",
+        cashtag: normalizeCashtag(cashapp.cashtag),
+        paymentLink: cashapp.paymentLink || cashAppLink(cashapp.cashtag),
+        qrCodeImageUrl: cashapp.qrCodeImageUrl || "",
+        memoInstructions: cashapp.memoInstructions || "Include your order number in the Cash App note.",
+        confirmationIntro: cashapp.confirmationIntro || "Your order is reserved. Send payment with Cash App using the details below, then keep your order number for reference."
       }
     };
+  }
+
+  function normalizeCashtag(value = "") {
+    const tag = String(value || "").trim().replace(/^\$+/, "");
+    return tag ? `$${tag}` : "";
+  }
+
+  function cashAppLink(cashtag = "") {
+    const tag = normalizeCashtag(cashtag);
+    return tag ? `https://cash.app/${tag}` : "";
   }
 
   function readPaymentMethod() {
@@ -213,7 +228,7 @@
   function enabledPaymentMethods(settings = {}) {
     return [
       settings.zelle?.enabled ? "zelle" : "",
-      settings.paybito?.enabled ? "paybito" : ""
+      settings.cashapp?.enabled ? "cashapp" : ""
     ].filter(Boolean);
   }
 
@@ -295,13 +310,13 @@
         </label>
       `);
     }
-    if (settings.paybito?.enabled) {
+    if (settings.cashapp?.enabled) {
       options.push(`
-        <label class="payment-rate ${selectedMethod === "paybito" ? "is-selected" : ""}">
-          <input type="radio" name="paymentMethod" value="paybito"${selectedMethod === "paybito" ? " checked" : ""}>
+        <label class="payment-rate ${selectedMethod === "cashapp" ? "is-selected" : ""}">
+          <input type="radio" name="paymentMethod" value="cashapp"${selectedMethod === "cashapp" ? " checked" : ""}>
           <span>
-            <strong>${escapeHtml(settings.paybito.displayName || "PayBito")}</strong>
-            <small>${escapeHtml(settings.paybito.checkoutNote || "Pay securely through PayBito. You will be redirected to complete payment.")}</small>
+            <strong>${escapeHtml(settings.cashapp.displayName || "Cash App")}</strong>
+            <small>Place the order now and receive payment instructions by email.</small>
           </span>
         </label>
       `);
@@ -345,6 +360,38 @@
         <p>${escapeHtml(zelle.memoInstructions || "Include your order number in the Zelle memo.")}</p>
       </div>
     `;
+  }
+
+  function renderCashAppInstructions(settings, order) {
+    const cashapp = settings.cashapp || {};
+    const details = [
+      cashapp.recipientName ? ["Name", cashapp.recipientName] : null,
+      cashapp.cashtag ? ["$Cashtag", cashapp.cashtag] : null,
+      cashapp.paymentLink ? ["Payment link", cashapp.paymentLink] : null,
+      ["Note", order.paymentReference || order.orderNumber || ""]
+    ].filter(Boolean);
+
+    return `
+      <div class="cart-message zelle-instructions cashapp-instructions">
+        <strong>${escapeHtml(cashapp.confirmationIntro || "Send your Cash App payment using the details below.")}</strong>
+        ${cashapp.qrCodeImageUrl ? `<img class="zelle-qr-code" src="${escapeHtml(cashapp.qrCodeImageUrl)}" alt="Cash App QR code">` : ""}
+        <dl>
+          ${details.map(([label, value]) => `
+            <div>
+              <dt>${escapeHtml(label)}</dt>
+              <dd>${label === "Payment link" ? `<a href="${escapeHtml(value)}" target="_blank" rel="noopener">Open Cash App payment link</a>` : escapeHtml(value)}</dd>
+            </div>
+          `).join("")}
+        </dl>
+        <p>${escapeHtml(cashapp.memoInstructions || "Include your order number in the Cash App note.")}</p>
+      </div>
+    `;
+  }
+
+  function renderPaymentInstructions(paymentMethod, settings, order) {
+    return paymentMethod === "cashapp"
+      ? renderCashAppInstructions(settings, order)
+      : renderZelleInstructions(settings, order);
   }
 
   function collectShippingAddress() {
@@ -550,11 +597,11 @@
         await renderCart("Please choose an available payment method.");
         return;
       }
-      if (paymentMethod === "paybito" && !paymentSettings.paybito?.enabled) {
+      if (paymentMethod === "cashapp" && !paymentSettings.cashapp?.enabled) {
         await renderCart("Please choose an available payment method.");
         return;
       }
-      if (!["zelle", "paybito"].includes(paymentMethod)) {
+      if (!["zelle", "cashapp"].includes(paymentMethod)) {
         await renderCart("Please choose an available payment method.");
         return;
       }
@@ -569,10 +616,10 @@
       }
 
       try {
-        const order = paymentMethod === "paybito"
+        const order = paymentMethod === "cashapp"
           ? await createPaymentOrder({
             cartId: window.BeyondPepsCart.cartId(),
-            paymentProvider: "paybito",
+            paymentProvider: "cashapp",
             customer: { name: address.name, email: address.email, phone: address.phone },
             shippingAddress: address,
             shippingRate: readShippingRate(),
@@ -592,19 +639,6 @@
           metadata: { order_number: order.orderNumber || "", item_count: items.reduce((sum, item) => sum + item.quantity, 0) }
         });
 
-        if (paymentMethod === "paybito") {
-          button.textContent = "Opening PayBito...";
-          const session = await startPaybitoCheckout(order, address, items, readShippingRate());
-          window.BeyondPepsCart.clearCart();
-          clearShippingRates();
-          sessionStorage.setItem("beyondPepsLastPaybitoOrder", JSON.stringify({
-            orderNumber: order.orderNumber,
-            orderId: order.orderId
-          }));
-          window.location.href = session.checkoutUrl;
-          return;
-        }
-
         const emailResult = await sendOrderConfirmation(order, address, items, readShippingRate(), paymentSettings);
         window.BeyondPepsCart.clearCart();
         clearShippingRates();
@@ -613,8 +647,8 @@
         document.querySelector("#cartItems").innerHTML = `
           <div class="empty-state glass-panel">
             <h2>Order ${escapeHtml(order.orderNumber)} placed.</h2>
-            <p>Your order is reserved while Zelle payment is matched.</p>
-            ${renderZelleInstructions(paymentSettings, order)}
+            <p>Your order is reserved while ${escapeHtml(paymentMethod === "cashapp" ? (paymentSettings.cashapp?.displayName || "Cash App") : (paymentSettings.zelle?.displayName || "Zelle"))} payment is matched.</p>
+            ${renderPaymentInstructions(paymentMethod, paymentSettings, order)}
             <a class="button primary" href="shop.html">Continue shopping</a>
           </div>
         `;
@@ -650,20 +684,6 @@
       console.warn("Confirmation email did not send.", error);
       return { sent: false, reason: error.message };
     }
-  }
-
-  async function startPaybitoCheckout(order, address, items, shippingRate) {
-    const response = await fetch("/api/paybito-checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        customer: { name: address.name, email: address.email, phone: address.phone },
-        order,
-        items,
-        shippingRate
-      })
-    });
-    return readApiResponse(response, "PayBito checkout is temporarily unavailable.");
   }
 
   document.addEventListener("DOMContentLoaded", () => {
